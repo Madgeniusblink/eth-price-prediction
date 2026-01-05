@@ -16,6 +16,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from trading_signals import TradingSignals
 from glossary import GLOSSARY
+from config import BASE_DIR
 
 def create_report_folders():
     """Create folder structure for reports"""
@@ -84,7 +85,7 @@ def run_prediction_pipeline():
         signals_data = generate_trading_signals()
         if signals_data:
             # Save trading signals
-            with open('/home/ubuntu/trading_signals.json', 'w') as f:
+            with open(os.path.join(BASE_DIR, 'trading_signals.json'), 'w') as f:
                 json.dump(signals_data, f, indent=2)
             print("✓ Trading signals generated successfully\n")
         else:
@@ -98,7 +99,7 @@ def generate_trading_signals():
     """Generate trading signals from market data"""
     try:
         # Load market data
-        data_file = '/home/ubuntu/eth_1m_data.csv'
+        data_file = os.path.join(BASE_DIR, 'eth_1m_data.csv')
         if not os.path.exists(data_file):
             return None
         

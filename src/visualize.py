@@ -1,3 +1,4 @@
+import os
 #!/usr/bin/env python3
 """
 Visualize Ethereum price predictions with trend lines
@@ -9,6 +10,7 @@ import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 from datetime import datetime, timedelta
 import json
+from config import BASE_DIR
 
 # Set style
 plt.style.use('seaborn-v0_8-darkgrid')
@@ -20,16 +22,16 @@ def plot_predictions_overview():
     Create comprehensive visualization with historical data and predictions
     """
     # Load data
-    df_1m = pd.read_csv('/home/ubuntu/eth_1m_data.csv')
+    df_1m = pd.read_csv(os.path.join(BASE_DIR, 'eth_1m_data.csv'))
     df_1m['timestamp'] = pd.to_datetime(df_1m['timestamp'])
     
-    pred_60m = pd.read_csv('/home/ubuntu/predictions_60m.csv')
+    pred_60m = pd.read_csv(os.path.join(BASE_DIR, 'predictions_60m.csv'))
     pred_60m['timestamp'] = pd.to_datetime(pred_60m['timestamp'])
     
-    pred_120m = pd.read_csv('/home/ubuntu/predictions_120m.csv')
+    pred_120m = pd.read_csv(os.path.join(BASE_DIR, 'predictions_120m.csv'))
     pred_120m['timestamp'] = pd.to_datetime(pred_120m['timestamp'])
     
-    with open('/home/ubuntu/predictions_summary.json', 'r') as f:
+    with open(os.path.join(BASE_DIR, 'predictions_summary.json'), 'r') as f:
         summary = json.load(f)
     
     # Use last 120 minutes of historical data
@@ -154,7 +156,7 @@ Current Price: ${summary['current_price']:.2f}
     
     ax3.set_title('Price Predictions Summary', fontsize=12, fontweight='bold', pad=20)
     
-    plt.savefig('/home/ubuntu/eth_prediction_overview.png', dpi=300, bbox_inches='tight')
+    plt.savefig(os.path.join(BASE_DIR, 'eth_prediction_overview.png'), dpi=300, bbox_inches='tight')
     print("✓ Saved: /home/ubuntu/eth_prediction_overview.png")
     plt.close()
 
@@ -163,7 +165,7 @@ def plot_technical_indicators():
     Plot technical indicators with predictions
     """
     # Load data
-    df_1m = pd.read_csv('/home/ubuntu/eth_1m_data.csv')
+    df_1m = pd.read_csv(os.path.join(BASE_DIR, 'eth_1m_data.csv'))
     df_1m['timestamp'] = pd.to_datetime(df_1m['timestamp'])
     
     # Calculate indicators
@@ -241,7 +243,7 @@ def plot_technical_indicators():
         plt.setp(ax.xaxis.get_majorticklabels(), rotation=45)
     
     plt.tight_layout()
-    plt.savefig('/home/ubuntu/eth_technical_indicators.png', dpi=300, bbox_inches='tight')
+    plt.savefig(os.path.join(BASE_DIR, 'eth_technical_indicators.png'), dpi=300, bbox_inches='tight')
     print("✓ Saved: /home/ubuntu/eth_technical_indicators.png")
     plt.close()
 
@@ -250,10 +252,10 @@ def plot_short_term_focus():
     Focused view on next 1 hour prediction
     """
     # Load data
-    df_1m = pd.read_csv('/home/ubuntu/eth_1m_data.csv')
+    df_1m = pd.read_csv(os.path.join(BASE_DIR, 'eth_1m_data.csv'))
     df_1m['timestamp'] = pd.to_datetime(df_1m['timestamp'])
     
-    pred_60m = pd.read_csv('/home/ubuntu/predictions_60m.csv')
+    pred_60m = pd.read_csv(os.path.join(BASE_DIR, 'predictions_60m.csv'))
     pred_60m['timestamp'] = pd.to_datetime(pred_60m['timestamp'])
     
     # Use last 60 minutes of historical + 60 minutes prediction
@@ -320,7 +322,7 @@ def plot_short_term_focus():
                arrowprops=dict(arrowstyle='->', lw=2, color='black'))
     
     plt.tight_layout()
-    plt.savefig('/home/ubuntu/eth_1hour_prediction.png', dpi=300, bbox_inches='tight')
+    plt.savefig(os.path.join(BASE_DIR, 'eth_1hour_prediction.png'), dpi=300, bbox_inches='tight')
     print("✓ Saved: /home/ubuntu/eth_1hour_prediction.png")
     plt.close()
 

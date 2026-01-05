@@ -9,12 +9,13 @@ import pandas as pd
 from datetime import datetime, timedelta
 import matplotlib.pyplot as plt
 import matplotlib
+from config import BASE_DIR
 matplotlib.use('Agg')
 
 class AccuracyTracker:
     """Track and analyze prediction accuracy over time"""
     
-    def __init__(self, reports_dir='/home/ubuntu/eth-price-prediction/reports'):
+    def __init__(self, reports_dir=os.path.join(BASE_DIR, 'reports')):
         self.reports_dir = reports_dir
         self.history_file = os.path.join(reports_dir, 'accuracy_history.json')
         self.load_history()

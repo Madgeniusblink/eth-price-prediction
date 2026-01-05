@@ -1,3 +1,4 @@
+import os
 #!/usr/bin/env python3
 """
 Ethereum Short-Term Price Prediction Model
@@ -12,6 +13,7 @@ from sklearn.ensemble import RandomForestRegressor
 from datetime import datetime, timedelta
 import json
 import warnings
+from config import BASE_DIR
 warnings.filterwarnings('ignore')
 
 def calculate_technical_indicators(df):
@@ -252,7 +254,7 @@ def main():
     print("=== Ethereum Short-Term Price Prediction ===\n")
     
     # Load 1-minute data
-    df_1m = pd.read_csv('/home/ubuntu/eth_1m_data.csv')
+    df_1m = pd.read_csv(os.path.join(BASE_DIR, 'eth_1m_data.csv'))
     df_1m['timestamp'] = pd.to_datetime(df_1m['timestamp'])
     
     print(f"Loaded {len(df_1m)} 1-minute candles")
@@ -358,10 +360,10 @@ def main():
         'ml_features': predictions_120m['ml_features']
     })
     
-    pred_df_60m.to_csv('/home/ubuntu/predictions_60m.csv', index=False)
-    pred_df_120m.to_csv('/home/ubuntu/predictions_120m.csv', index=False)
+    pred_df_60m.to_csv(os.path.join(BASE_DIR, 'predictions_60m.csv'), index=False)
+    pred_df_120m.to_csv(os.path.join(BASE_DIR, 'predictions_120m.csv'), index=False)
     
-    with open('/home/ubuntu/predictions_summary.json', 'w') as f:
+    with open(os.path.join(BASE_DIR, 'predictions_summary.json'), 'w') as f:
         json.dump(predictions_data, f, indent=2)
     
     print("\n=== Prediction Files Saved ===")
