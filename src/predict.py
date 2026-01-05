@@ -367,9 +367,9 @@ def main():
         json.dump(predictions_data, f, indent=2)
     
     print("\n=== Prediction Files Saved ===")
-    print("  /home/ubuntu/predictions_60m.csv")
-    print("  /home/ubuntu/predictions_120m.csv")
-    print("  /home/ubuntu/predictions_summary.json")
+    print(f"  {os.path.join(BASE_DIR, 'predictions_60m.csv')}")
+    print(f"  {os.path.join(BASE_DIR, 'predictions_120m.csv')}")
+    print(f"  {os.path.join(BASE_DIR, 'predictions_summary.json')}")
 
 if __name__ == '__main__':
     main()

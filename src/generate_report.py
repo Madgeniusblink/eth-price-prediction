@@ -16,7 +16,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from trading_signals import TradingSignals
 from glossary import GLOSSARY
-from config import BASE_DIR
+from config import BASE_DIR, DATA_DIR
 
 def create_report_folders():
     """Create folder structure for reports"""
@@ -149,7 +149,7 @@ def copy_outputs_to_report_folder(dated_dir, latest_dir, timestamp):
     copied_files = []
     
     for source_name, dest_name in files_to_copy.items():
-        source_path = os.path.join('/home/ubuntu', source_name)
+        source_path = os.path.join(BASE_DIR, source_name)
         
         if os.path.exists(source_path):
             # Copy to dated folder

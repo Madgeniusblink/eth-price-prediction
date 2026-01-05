@@ -157,7 +157,7 @@ Current Price: ${summary['current_price']:.2f}
     ax3.set_title('Price Predictions Summary', fontsize=12, fontweight='bold', pad=20)
     
     plt.savefig(os.path.join(BASE_DIR, 'eth_prediction_overview.png'), dpi=300, bbox_inches='tight')
-    print("✓ Saved: /home/ubuntu/eth_prediction_overview.png")
+    print(f"✓ Saved: {os.path.join(BASE_DIR, 'eth_prediction_overview.png')}")
     plt.close()
 
 def plot_technical_indicators():
@@ -244,7 +244,7 @@ def plot_technical_indicators():
     
     plt.tight_layout()
     plt.savefig(os.path.join(BASE_DIR, 'eth_technical_indicators.png'), dpi=300, bbox_inches='tight')
-    print("✓ Saved: /home/ubuntu/eth_technical_indicators.png")
+    print(f"✓ Saved: {os.path.join(BASE_DIR, 'eth_technical_indicators.png')}")
     plt.close()
 
 def plot_short_term_focus():
@@ -323,7 +323,7 @@ def plot_short_term_focus():
     
     plt.tight_layout()
     plt.savefig(os.path.join(BASE_DIR, 'eth_1hour_prediction.png'), dpi=300, bbox_inches='tight')
-    print("✓ Saved: /home/ubuntu/eth_1hour_prediction.png")
+    print(f"✓ Saved: {os.path.join(BASE_DIR, 'eth_1hour_prediction.png')}")
     plt.close()
 
 def main():

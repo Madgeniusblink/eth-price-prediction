@@ -68,12 +68,12 @@ def main():
     # Summary
     print_header("PIPELINE COMPLETED")
     print("Output files:")
-    print("  - Data: /home/ubuntu/eth_1m_data.csv")
-    print("  - Predictions: /home/ubuntu/predictions_summary.json")
+    print(f"  - Data: {os.path.join(BASE_DIR, 'eth_1m_data.csv')}")
+    print(f"  - Predictions: {os.path.join(BASE_DIR, 'predictions_summary.json')}")
     print("  - Visualizations:")
-    print("    • /home/ubuntu/eth_prediction_overview.png")
-    print("    • /home/ubuntu/eth_1hour_prediction.png")
-    print("    • /home/ubuntu/eth_technical_indicators.png")
+    print(f"    • {os.path.join(BASE_DIR, 'eth_prediction_overview.png')}")
+    print(f"    • {os.path.join(BASE_DIR, 'eth_1hour_prediction.png')}")
+    print(f"    • {os.path.join(BASE_DIR, 'eth_technical_indicators.png')}")
     print("\nCheck the files above for detailed results.")
     print(f"\nCompleted at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     

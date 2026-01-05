@@ -131,7 +131,7 @@ def main():
     df_1m = fetch_binance_data(symbol='ETHUSDT', interval='1m', limit=500)
     if df_1m is not None:
         df_1m.to_csv(os.path.join(BASE_DIR, 'eth_1m_data.csv'), index=False)
-        print(f"  Saved to: /home/ubuntu/eth_1m_data.csv")
+        print(f"  Saved to: {os.path.join(BASE_DIR, 'eth_1m_data.csv')}")
     
     print()
     
@@ -139,7 +139,7 @@ def main():
     df_5m = fetch_binance_data(symbol='ETHUSDT', interval='5m', limit=500)
     if df_5m is not None:
         df_5m.to_csv(os.path.join(BASE_DIR, 'eth_5m_data.csv'), index=False)
-        print(f"  Saved to: /home/ubuntu/eth_5m_data.csv")
+        print(f"  Saved to: {os.path.join(BASE_DIR, 'eth_5m_data.csv')}")
     
     print()
     
@@ -147,7 +147,7 @@ def main():
     df_15m = fetch_binance_data(symbol='ETHUSDT', interval='15m', limit=500)
     if df_15m is not None:
         df_15m.to_csv(os.path.join(BASE_DIR, 'eth_15m_data.csv'), index=False)
-        print(f"  Saved to: /home/ubuntu/eth_15m_data.csv")
+        print(f"  Saved to: {os.path.join(BASE_DIR, 'eth_15m_data.csv')}")
     
     print()
     
@@ -155,7 +155,7 @@ def main():
     df_cg = fetch_coingecko_data(days=1)
     if df_cg is not None:
         df_cg.to_csv(os.path.join(BASE_DIR, 'eth_coingecko_data.csv'), index=False)
-        print(f"  Saved to: /home/ubuntu/eth_coingecko_data.csv")
+        print(f"  Saved to: {os.path.join(BASE_DIR, 'eth_coingecko_data.csv')}")
     
     print("\n=== Data Collection Complete ===")
     
@@ -174,7 +174,7 @@ def main():
     with open(os.path.join(BASE_DIR, 'eth_data_metadata.json'), 'w') as f:
         json.dump(metadata, f, indent=2)
     
-    print(f"\nMetadata saved to: /home/ubuntu/eth_data_metadata.json")
+    print(f"\nMetadata saved to: {os.path.join(BASE_DIR, 'eth_data_metadata.json')}")
 
 if __name__ == '__main__':
     main()
