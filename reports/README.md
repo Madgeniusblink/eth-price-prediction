@@ -1,39 +1,74 @@
 # Ethereum Price Prediction Reports
 
-This directory contains automated prediction reports generated every 4 hours.
+This directory contains automated prediction reports with trading signals, generated every 4 hours.
 
 ## Latest Report
 
-See the [`latest/`](latest/) folder for the most recent prediction.
+See the [`latest/`](latest/) folder for the most recent prediction and trading analysis.
+
+## What's Included in Each Report
+
+Every report contains:
+
+1. **Executive Summary** - Quick overview of market status and trading signal
+2. **Price Predictions** - 15-minute, 30-minute, 1-hour, and 2-hour forecasts
+3. **Trading Analysis** - Trend assessment, support/resistance levels, and entry/exit signals
+4. **Prediction Charts** - Three comprehensive visualizations
+5. **Model Performance** - Accuracy metrics and ensemble weights
+6. **Terminology Guide** - Explanations of technical terms
+7. **Raw Data Files** - JSON predictions, trading signals, and market data CSV
 
 ## Report Schedule
 
 Reports are generated at the following times (UTC):
-- 00:00 - Asian session opening
-- 04:00 - Asian session peak  
-- 08:00 - European session opening
-- 12:00 - European/US overlap
-- 16:00 - US session peak
-- 20:00 - US session closing
+
+- **00:00** - Asian session opening
+- **04:00** - Asian session peak  
+- **08:00** - European session opening
+- **12:00** - European/US overlap
+- **16:00** - US session peak
+- **20:00** - US session closing
 
 ## Archive Structure
 
 Reports are organized by date: `YYYY/MM/DD/`
 
-Each report includes:
-- Prediction data (JSON)
-- Overview chart (PNG)
-- 1-hour focused chart (PNG)
-- Technical indicators chart (PNG)
-- Raw market data (CSV)
-- Summary README (MD)
+Each report folder contains:
+- `README.md` - Complete report with all analysis
+- `*_prediction.json` - Price prediction data
+- `*_signals.json` - Trading signals and trend analysis
+- `*_overview.png` - Prediction overview chart
+- `*_1hour.png` - 1-hour focused chart
+- `*_indicators.png` - Technical indicators chart
+- `*_data.csv` - Raw market data
 
-## How to Use
+## How to Use These Reports
 
-1. Navigate to the date you're interested in
-2. Open the README file for a quick summary
-3. View the PNG charts for visual analysis
-4. Download the JSON for programmatic access
+### For Quick Decisions
+1. Open the `latest/` folder
+2. Check the **Trading Signal** at the top
+3. Review the **Executive Summary**
+4. Look at the charts for visual confirmation
+
+### For Deep Analysis
+1. Navigate to a specific date
+2. Read the complete **Trading Analysis** section
+3. Study the **Support/Resistance Levels**
+4. Review the **Model Performance** metrics
+5. Download the JSON/CSV files for your own analysis
+
+### For Learning
+1. Read the **Terminology Guide** in each report
+2. Compare predictions vs actual prices over time
+3. Study how different market conditions affect signals
+4. Track model performance across different market regimes
+
+## Important Notes
+
+- Trading signals are based on technical analysis only
+- Always use proper risk management
+- These are educational tools, not financial advice
+- Cryptocurrency trading carries substantial risk
 
 ---
 

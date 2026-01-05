@@ -92,3 +92,35 @@ While not fully implemented in the base version, the framework is designed to in
 ## 7. Conclusion
 
 Model validation and self-correction are not afterthoughts; they are at the heart of this prediction system. Through a combination of rigorous, time-series-aware backtesting, multi-faceted performance metrics, and adaptive mechanisms like dynamic ensemble weighting, we strive to create a system that is not only accurate but also robust and reliable in the face of the unpredictable cryptocurrency market. Continuous monitoring and a commitment to these principles are key to the long-term success of the model.
+
+
+## 7. Trading Signal Validation
+
+Validating the trading signals is a distinct process from validating the price predictions. While prediction accuracy is measured by metrics like R² and RMSE, signal quality is measured by its historical profitability and consistency.
+
+### 7.1. Backtesting Framework
+
+The `track_accuracy.py` module provides the foundation for a robust backtesting framework. The process involves:
+
+1.  **Historical Simulation**: The system simulates executing trades based on the signals generated over a historical data period (e.g., the last 30 days).
+2.  **Trade Execution Logic**:
+    *   When a **BUY** signal is generated, a hypothetical long position is opened.
+    *   When a **SHORT** signal is generated, a hypothetical short position is opened.
+    *   The position is closed if it hits the **Stop Loss**, **Target Price**, or if a counter-signal is generated.
+3.  **Performance Metrics Calculation**: Each simulated trade is logged, and a suite of performance metrics is calculated.
+
+### 7.2. Key Performance Metrics for Signals
+
+| Metric | Description | Target |
+| :--- | :--- | :--- |
+| **Win Rate** | The percentage of trades that are profitable. | > 50% |
+| **Profit Factor** | Gross profit divided by gross loss. A value greater than 1 indicates profitability. | > 1.5 |
+| **Average Win / Average Loss** | The ratio of the average profit on winning trades to the average loss on losing trades. | > 1.5 |
+| **Sharpe Ratio** | The risk-adjusted return of the strategy. Measures the excess return per unit of risk (volatility). | > 1.0 |
+| **Maximum Drawdown** | The largest peak-to-trough decline in portfolio value during the backtest. Measures the worst-case loss scenario. | < 20% |
+
+### 7.3. Walk-Forward Optimization
+
+To avoid overfitting the signal generation logic to historical data, we employ a walk-forward optimization approach. The backtest is run on a segment of data (e.g., one month), and the results are analyzed. The model is then tested on the *next* month of data (an out-of-sample period) to see if the performance holds. This process is repeated, "walking forward" through time to ensure the strategy is robust across different market conditions.
+
+This rigorous validation process for the trading signals ensures that the system not only predicts the price accurately but also provides a historically profitable framework for making trading decisions.

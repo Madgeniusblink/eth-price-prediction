@@ -1,148 +1,83 @@
-'''# Automated Prediction Scheduling
+# Automated Prediction and Trading Signal System
 
-**Document Version:** 1.0  
-**Last Updated:** January 5, 2026
+This document details the automated system that generates and commits prediction reports and trading signals every 4 hours.
 
----
+## System Overview
 
-## 1. Overview
+The automation is driven by a GitHub Actions workflow that executes a Python script (`src/generate_report.py`) on a schedule. This script is the master orchestrator for the entire process.
 
-This document provides instructions for setting up and managing the automated prediction reporting system. The system is designed to run on a schedule, generate a new prediction report, and commit the results to the GitHub repository automatically.
+### Workflow Steps
 
-**Recommended Schedule:** Every 4 hours (00:00, 04:00, 08:00, 12:00, 16:00, 20:00 UTC)
+1.  **Scheduled Trigger**: The GitHub Actions workflow is triggered every 4 hours (`cron: '0 */4 * * *'`).
+2.  **Environment Setup**: A virtual environment is created, and all dependencies from `requirements.txt` are installed.
+3.  **Execute `generate_report.py`**: The main script runs, performing the following sub-steps:
+    *   **Data Fetching**: Fetches the latest 1-minute ETH/USD data from the Binance API.
+    *   **Prediction Generation**: Runs the ensemble machine learning model to generate price forecasts.
+    *   **Trading Signal Analysis**: Executes the `trading_signals` module to determine the market trend, support/resistance levels, and generate a BUY/SELL/SHORT/WAIT signal.
+    *   **Visualization**: Creates the three standard PNG charts.
+    *   **Report Consolidation**: Gathers all predictions, signals, charts, and analysis into a single, comprehensive `README.md` file.
+4.  **File Organization**:
+    *   A new, timestamped directory is created under `reports/YYYY/MM/DD/`.
+    *   All generated files (JSON, CSV, PNG, MD) are saved to this new directory.
+    *   The files are also copied to the `reports/latest/` directory, overwriting the previous report for easy access.
+5.  **Commit to GitHub**: The GitHub Action automatically commits all new and updated files back to the repository, creating a permanent, public track record.
 
-We provide three methods for automation:
+## Report Contents
 
-1.  **GitHub Actions (Recommended)**: Cloud-based, fully integrated with the repository, no local infrastructure needed.
-2.  **Cron Job (Linux/macOS)**: For users who want to run the automation on their own server.
-3.  **Windows Task Scheduler**: For users running a Windows-based automation server.
+Each automated report is a complete analysis package, containing:
 
-## 2. Method 1: GitHub Actions (Recommended)
+-   **Executive Summary**: High-level overview of the market and the primary trading signal.
+-   **Price Predictions**: Forecasts for 15m, 30m, 60m, and 120m horizons.
+-   **Trading Analysis**: The core of the report, detailing the market trend, support/resistance levels, and the full trade setup (entry, stop, target).
+-   **Prediction Charts**: Visualizations of the predictions and technical indicators.
+-   **Model Performance**: R² scores and weights for transparency.
+-   **Terminology Guide**: Plain English explanations of all technical terms.
+-   **Raw Data Files**: All underlying data in JSON and CSV formats.
 
-The repository includes a pre-configured GitHub Actions workflow file at `.github/workflows/scheduled-prediction.yml`. This is the easiest and most reliable way to automate the predictions.
+## How to Manage the Automation
 
-### How It Works
+### Enabling/Disabling the Workflow
 
-- **Trigger**: The workflow is triggered automatically by a `cron` schedule defined in the file.
-- **Environment**: It runs on a fresh, cloud-based Ubuntu virtual machine.
-- **Steps**:
-    1.  Checks out the latest code from your repository.
-    2.  Sets up the correct Python version.
-    3.  Installs all required dependencies from `requirements.txt`.
-    4.  Executes the `src/generate_report.py` script.
-    5.  Configures Git with your user details.
-    6.  Commits the newly generated files in the `reports/` directory.
-    7.  Pushes the commit back to your `main` branch.
+1.  Go to the **Actions** tab of the repository on GitHub.
+2.  Select the **Scheduled Prediction Report** workflow.
+3.  You can manually run the workflow or disable it using the options provided.
 
-### Setup Instructions
+### Changing the Schedule
 
-**The setup is already complete!** The workflow file is included in the repository. When you push this repository to your GitHub account, GitHub will automatically detect the workflow and start running it on the defined schedule.
+1.  Edit the `.github/workflows/scheduled-prediction.yml` file.
+2.  Modify the `cron` schedule. For example, to run every hour, change it to `'0 * * * *'`.
 
-### Managing the Workflow
+### Local Execution
 
-- **View Runs**: Go to your repository on GitHub, click the "Actions" tab. You will see a list of all workflow runs.
-- **Manual Trigger**: You can manually trigger a run from the "Actions" tab. Select "Automated ETH Price Prediction" from the list of workflows, click "Run workflow", and then "Run workflow" again.
-- **Disable/Enable**: You can disable or enable the workflow from the "Actions" tab if needed.
-- **Change Schedule**: To change the schedule, edit the `cron` expression in `.github/workflows/scheduled-prediction.yml`.
+You can simulate the automated run locally at any time:
 
-    ```yaml
-    on:
-      schedule:
-        # Runs every 4 hours
-        - cron: '0 */4 * * *'
-    ```
+```bash
+python src/generate_report.py
+```
 
-## 3. Method 2: Cron Job (Linux/macOS)
+This is useful for testing changes before committing them.
 
-Use this method if you prefer to run the automation on your own Linux or macOS server.
-
-### Prerequisites
-
-- Git installed and configured.
-- Python 3.8+ installed.
-- The repository cloned to your server.
-
-### Setup Instructions
-
-1.  **Make the script executable**:
-
-    ```bash
-    chmod +x /path/to/eth-price-prediction/scripts/run_scheduled_prediction.sh
-    ```
-
-2.  **Edit your crontab**:
-
-    ```bash
-    crontab -e
-    ```
-
-3.  **Add the cron job entry**:
-
-    Add the following line to the file. This will run the script every 4 hours and log the output.
-
-    ```cron
-    0 */4 * * * /path/to/eth-price-prediction/scripts/run_scheduled_prediction.sh >> /var/log/eth-prediction.log 2>&1
-    ```
-
-    *Make sure to replace `/path/to/eth-price-prediction` with the actual absolute path to the project directory on your server.*
-
-4.  **Save and Exit**: The cron job is now active.
-
-## 4. Method 3: Windows Task Scheduler
-
-Use this method for automation on a Windows machine.
-
-### Prerequisites
-
-- Git for Windows installed and configured.
-- Python 3.8+ installed.
-- The repository cloned to your machine.
-
-### Setup Instructions
-
-1.  **Open Task Scheduler**: Press `Win + R`, type `taskschd.msc`, and press Enter.
-
-2.  **Create Basic Task**: In the "Actions" pane on the right, click "Create Basic Task...".
-
-3.  **Name and Description**:
-    - Name: `Ethereum Price Prediction`
-    - Description: `Runs the automated ETH prediction report every 4 hours.`
-
-4.  **Trigger**:
-    - Select "Daily".
-    - Set it to recur every `1` day.
-    - Click "Next".
-
-5.  **Advanced Trigger Settings**:
-    - After creating the task, open its properties.
-    - Go to the "Triggers" tab and edit your trigger.
-    - Under "Advanced settings", check "Repeat task every" and select `4 hours` from the dropdown. Set the duration to `1 day`.
-
-6.  **Action**:
-    - Select "Start a program".
-    - **Program/script**: Browse to and select the `run_scheduled_prediction.bat` script located in the `scripts` folder of the repository.
-    - **Start in (optional)**: It's good practice to set this to the repository's root directory (e.g., `C:\Users\YourUser\Documents\eth-price-prediction`).
-
-7.  **Finish**: Click "Finish" to save the task.
-
-## 5. Report Structure
-
-Regardless of the method used, the automation script will create and update the following structure within the `reports/` directory:
+## Folder Structure for Reports
 
 ```
 reports/
-├── YYYY/MM/DD/                  # Archive of all historical reports
-│   ├── 2026-01-05_00-00_prediction.json
-│   └── 2026-01-05_00-00_overview.png
-├── latest/                        # Always contains the most recent report
-│   ├── predictions_summary.json
+├── latest/                  # Always contains the most recent report
+│   ├── README.md
+│   ├── eth_1m_data.csv
+│   ├── eth_1hour_prediction.png
 │   ├── eth_prediction_overview.png
-│   └── README.md
-└── README.md                      # Main index for the reports directory
+│   ├── eth_technical_indicators.png
+│   ├── predictions_summary.json
+│   └── trading_signals.json
+└── 2026/
+    └── 01/
+        └── 05/
+            ├── 2026-01-05_12-00_README.md
+            ├── 2026-01-05_12-00_data.csv
+            ├── 2026-01-05_12-00_1hour.png
+            ├── ... (and all other files)
+            └── 2026-01-05_16-00_README.md
+            └── ... (next report)
 ```
 
-- **Archive (`YYYY/MM/DD/`)**: A new folder is created for each day, containing all reports generated on that day, timestamped for clarity.
-- **Latest (`/latest`)**: This folder is overwritten during each run to always contain the most recent prediction files. This provides a stable endpoint for any other applications that might want to consume the latest report.
-
-This robust structure ensures both a complete historical archive and easy access to the latest data.
-'''
+This structure ensures both a clean historical archive and easy access to the latest analysis.

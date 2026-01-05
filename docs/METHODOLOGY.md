@@ -96,3 +96,40 @@ Our system employs a three-tiered modeling strategy, culminating in a performanc
 ## 7. Conclusion
 
 This methodology provides a robust and transparent framework for short-term cryptocurrency price prediction. By combining a rigorous data-driven approach with a diverse set of modeling techniques and a commitment to continuous validation, the system is designed to adapt to the ever-changing dynamics of the market. The emphasis on feature engineering, ensemble learning, and uncertainty quantification ensures that the resulting predictions are not just a single number, but a well-reasoned and contextualized forecast.
+
+
+## 8. Trading Signal Methodology
+
+While price prediction provides a forecast of *what* the price might do, the trading signal component is designed to provide actionable guidance on *when* to act. This is achieved through a two-stage process that prioritizes market context over raw signals, a crucial step in avoiding common trading pitfalls.
+
+### 8.1. Stage 1: Trend Detection
+
+Before generating any entry or exit signal, the system first establishes the broader market context. It classifies the market into one of three regimes:
+
+-   **BULL MARKET**: A sustained uptrend, identified by the 50-period moving average trading above the 200-period moving average (a "Golden Cross") and a consistent pattern of higher-lows in the price action.
+-   **BEAR MARKET**: A sustained downtrend, identified by the 50-period moving average trading below the 200-period moving average (a "Death Cross") and a pattern of lower-highs.
+-   **NEUTRAL / RANGING**: A sideways market where trend indicators are mixed and the price is oscillating between clear support and resistance levels.
+
+This initial classification is the most critical step, as it dictates the types of trades the system will look for. In a Bull Market, the system will only look for BUY signals on dips. In a Bear Market, it will only look for SHORT signals on rallies.
+
+### 8.2. Stage 2: Signal Generation
+
+Once the market trend is established, the system seeks a high-probability entry point by requiring a confluence of evidence from multiple indicators. A signal is only generated when several conditions are met simultaneously:
+
+| Signal | Required Trend | Price Location | Momentum Conditions |
+| :--- | :--- | :--- | :--- |
+| **BUY** | BULL MARKET | Near a key **Support** level | RSI is oversold or neutral, and a bullish MACD crossover is forming. |
+| **SHORT** | BEAR MARKET | Near a key **Resistance** level | RSI is overbought or neutral, and a bearish MACD crossover is forming. |
+| **SELL** | Any | Near a key **Resistance** level | RSI is overbought, indicating a potential exit point for a long position. |
+| **WAIT** | Any | Not near key levels | Indicators are conflicting, providing no clear, high-probability setup. |
+
+### 8.3. Risk Management Integration
+
+For every BUY or SHORT signal generated, the system also calculates a complete trade setup:
+
+-   **Entry Price**: The current price at the time of the signal.
+-   **Stop Loss**: Placed just below the identified support level (for a BUY) or just above the resistance level (for a SHORT). This defines the maximum acceptable loss for the trade.
+-   **Target Price**: The next significant resistance level (for a BUY) or support level (for a SHORT).
+-   **Risk/Reward Ratio**: The ratio of the potential profit (Target - Entry) to the potential loss (Entry - Stop Loss). The system is designed to favor trades with a high Risk/Reward Ratio (typically > 1.5).
+
+This comprehensive approach ensures that every signal is not just a prediction, but a complete, risk-managed trade idea that is aligned with the broader market trend.

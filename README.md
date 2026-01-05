@@ -12,6 +12,7 @@ A professional-grade, short-term cryptocurrency price prediction system using en
 - **Real-Time Data**: Fetches live 1-minute candlestick data from Binance (free API, no key required)
 - **Technical Indicators**: RSI, MACD, Bollinger Bands, Moving Averages, and more
 - **Professional Visualizations**: Publication-quality charts with trend lines and predictions
+- **Trading Signals & Trend Analysis**: Generates BUY/SELL/SHORT signals with long-term trend context to avoid bear market traps.
 - **Model Validation**: Built-in backtesting, cross-validation, and performance metrics
 - **Self-Correcting**: Continuous model evaluation and adaptive weighting
 
@@ -81,6 +82,19 @@ Model Performance:
   RMSE: $2.47
   MAE: $1.83
 ```
+
+## Trading Signals & Trend Analysis
+
+The system includes a sophisticated module (`src/trading_signals.py`) that provides clear, actionable trading signals by analyzing the broader market context. This helps prevent common pitfalls like buying into bear market rallies.
+
+### How It Works
+
+1.  **Trend Detection**: First, it determines the overall market trend (BULL, BEAR, or NEUTRAL) by analyzing moving averages, price action (higher-lows vs. lower-highs), and momentum.
+2.  **Support/Resistance**: It automatically identifies key support and resistance levels from recent price history.
+3.  **Signal Generation**: It combines the trend context with indicators like RSI, MACD, and Bollinger Bands to generate a clear signal: **BUY**, **SELL**, **SHORT**, or **WAIT**.
+4.  **Risk Management**: For every signal, it provides a complete trade setup, including an **Entry Price**, **Stop Loss**, and **Target Price**, along with the **Risk/Reward Ratio**.
+
+This two-step process—understanding the trend first, then looking for an entry—is crucial for successful trading.
 
 ## Project Structure
 

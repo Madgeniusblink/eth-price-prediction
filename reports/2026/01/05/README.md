@@ -88,19 +88,19 @@
 
 Complete view of historical data, predictions from all models, and ensemble forecast with confidence intervals.
 
-![Prediction Overview](eth_prediction_overview.png)
+![Prediction Overview](2026-01-05_07-49_overview.png)
 
 ### 1-Hour Focused Prediction
 
 Detailed near-term view with trend lines and prediction paths.
 
-![1-Hour Prediction](eth_1hour_prediction.png)
+![1-Hour Prediction](2026-01-05_07-49_1hour.png)
 
 ### Technical Indicators
 
 Comprehensive analysis of all technical indicators.
 
-![Technical Indicators](eth_technical_indicators.png)
+![Technical Indicators](2026-01-05_07-49_indicators.png)
 
 ---
 
@@ -171,9 +171,9 @@ All data files included in this report:
 
 - Prediction Data: `2026-01-05_07-49_prediction.json`
 - Trading Signals: `2026-01-05_07-49_signals.json`
-- Chart: `eth_prediction_overview.png`
-- Chart: `eth_1hour_prediction.png`
-- Chart: `eth_technical_indicators.png`
+- Chart: `2026-01-05_07-49_overview.png`
+- Chart: `2026-01-05_07-49_1hour.png`
+- Chart: `2026-01-05_07-49_indicators.png`
 - Market Data: `2026-01-05_07-49_data.csv`
 
 
