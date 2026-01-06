@@ -1,7 +1,7 @@
 import os
 #!/usr/bin/env python3
 """
-Fetch Ethereum price data from multiple sources for short-term prediction
+Fetch Ethereum price data from multiple sources for swing trading (4-hour timeframe)
 """
 
 import requests
@@ -127,23 +127,23 @@ def main():
     
     print("\n=== Fetching Historical Data ===\n")
     
-    # Fetch 1-minute data from Binance (last ~8 hours)
-    df_1m = fetch_binance_data(symbol='ETHUSDT', interval='1m', limit=500)
-    if df_1m is not None:
-        df_1m.to_csv(os.path.join(BASE_DIR, 'eth_1m_data.csv'), index=False)
-        print(f"  Saved to: {os.path.join(BASE_DIR, 'eth_1m_data.csv')}")
+    # Fetch 4-hour data from Binance (last ~83 days with 500 candles)
+    df_4h = fetch_binance_data(symbol='ETHUSDT', interval='4h', limit=500)
+    if df_4h is not None:
+        df_4h.to_csv(os.path.join(BASE_DIR, 'eth_4h_data.csv'), index=False)
+        print(f"  Saved to: {os.path.join(BASE_DIR, 'eth_4h_data.csv')}")
     
     print()
     
-    # Fetch 5-minute data from Binance (last ~41 hours)
-    df_5m = fetch_binance_data(symbol='ETHUSDT', interval='5m', limit=500)
-    if df_5m is not None:
-        df_5m.to_csv(os.path.join(BASE_DIR, 'eth_5m_data.csv'), index=False)
-        print(f"  Saved to: {os.path.join(BASE_DIR, 'eth_5m_data.csv')}")
+    # Fetch 1-hour data from Binance (last ~20 days)
+    df_1h = fetch_binance_data(symbol='ETHUSDT', interval='1h', limit=500)
+    if df_1h is not None:
+        df_1h.to_csv(os.path.join(BASE_DIR, 'eth_1h_data.csv'), index=False)
+        print(f"  Saved to: {os.path.join(BASE_DIR, 'eth_1h_data.csv')}")
     
     print()
     
-    # Fetch 15-minute data from Binance (last ~5 days)
+    # Fetch 15-minute data from Binance (last ~5 days for additional context)
     df_15m = fetch_binance_data(symbol='ETHUSDT', interval='15m', limit=500)
     if df_15m is not None:
         df_15m.to_csv(os.path.join(BASE_DIR, 'eth_15m_data.csv'), index=False)
@@ -151,8 +151,8 @@ def main():
     
     print()
     
-    # Fetch minute-level data from CoinGecko
-    df_cg = fetch_coingecko_data(days=1)
+    # Fetch daily data from CoinGecko for longer-term context
+    df_cg = fetch_coingecko_data(days=90)
     if df_cg is not None:
         df_cg.to_csv(os.path.join(BASE_DIR, 'eth_coingecko_data.csv'), index=False)
         print(f"  Saved to: {os.path.join(BASE_DIR, 'eth_coingecko_data.csv')}")
@@ -164,8 +164,8 @@ def main():
         'fetch_time': datetime.now().isoformat(),
         'current_price': current_price,
         'data_files': {
-            '1m': os.path.join(BASE_DIR, 'eth_1m_data.csv'),
-            '5m': os.path.join(BASE_DIR, 'eth_5m_data.csv'),
+            '4h': os.path.join(BASE_DIR, 'eth_4h_data.csv'),
+            '1h': os.path.join(BASE_DIR, 'eth_1h_data.csv'),
             '15m': os.path.join(BASE_DIR, 'eth_15m_data.csv'),
             'coingecko': os.path.join(BASE_DIR, 'eth_coingecko_data.csv')
         }

@@ -22,20 +22,20 @@ def plot_predictions_overview():
     Create comprehensive visualization with historical data and predictions
     """
     # Load data
-    df_1m = pd.read_csv(os.path.join(BASE_DIR, 'eth_1m_data.csv'))
-    df_1m['timestamp'] = pd.to_datetime(df_1m['timestamp'])
+    df_4h = pd.read_csv(os.path.join(BASE_DIR, 'eth_4h_data.csv'))
+    df_4h['timestamp'] = pd.to_datetime(df_4h['timestamp'])
     
-    pred_60m = pd.read_csv(os.path.join(BASE_DIR, 'predictions_60m.csv'))
-    pred_60m['timestamp'] = pd.to_datetime(pred_60m['timestamp'])
+    pred_48h = pd.read_csv(os.path.join(BASE_DIR, 'predictions_48h.csv'))
+    pred_48h['timestamp'] = pd.to_datetime(pred_48h['timestamp'])
     
-    pred_120m = pd.read_csv(os.path.join(BASE_DIR, 'predictions_120m.csv'))
-    pred_120m['timestamp'] = pd.to_datetime(pred_120m['timestamp'])
+    pred_96h = pd.read_csv(os.path.join(BASE_DIR, 'predictions_96h.csv'))
+    pred_96h['timestamp'] = pd.to_datetime(pred_96h['timestamp'])
     
     with open(os.path.join(BASE_DIR, 'predictions_summary.json'), 'r') as f:
         summary = json.load(f)
     
-    # Use last 120 minutes of historical data
-    df_recent = df_1m.tail(120)
+    # Use last 30 periods (120 hours / 5 days) of historical data
+    df_recent = df_4h.tail(30)
     
     # Create figure with subplots
     fig = plt.figure(figsize=(18, 12))
@@ -49,13 +49,13 @@ def plot_predictions_overview():
              label='Historical Price', color='#2E86AB', linewidth=2, alpha=0.8)
     
     # Plot predictions
-    ax1.plot(pred_120m['timestamp'], pred_120m['ensemble'], 
+    ax1.plot(pred_96h['timestamp'], pred_96h['ensemble'], 
              label='Ensemble Prediction', color='#A23B72', linewidth=2.5, linestyle='--')
-    ax1.plot(pred_120m['timestamp'], pred_120m['linear'], 
+    ax1.plot(pred_96h['timestamp'], pred_96h['linear'], 
              label='Linear Trend', color='#F18F01', linewidth=1.5, alpha=0.6, linestyle=':')
-    ax1.plot(pred_120m['timestamp'], pred_120m['polynomial'], 
+    ax1.plot(pred_96h['timestamp'], pred_96h['polynomial'], 
              label='Polynomial Trend', color='#C73E1D', linewidth=1.5, alpha=0.6, linestyle=':')
-    ax1.plot(pred_120m['timestamp'], pred_120m['ml_features'], 
+    ax1.plot(pred_96h['timestamp'], pred_96h['ml_features'], 
              label='ML Features', color='#6A994E', linewidth=1.5, alpha=0.6, linestyle=':')
     
     # Mark current time
@@ -77,18 +77,18 @@ def plot_predictions_overview():
     
     # Add confidence band (simplified)
     std_dev = df_recent['close'].std()
-    ax1.fill_between(pred_120m['timestamp'], 
-                     pred_120m['ensemble'] - std_dev, 
-                     pred_120m['ensemble'] + std_dev,
+    ax1.fill_between(pred_96h['timestamp'], 
+                     pred_96h['ensemble'] - std_dev, 
+                     pred_96h['ensemble'] + std_dev,
                      alpha=0.2, color='purple', label='Confidence Band')
     
     ax1.set_xlabel('Time', fontsize=12, fontweight='bold')
     ax1.set_ylabel('Price (USD)', fontsize=12, fontweight='bold')
-    ax1.set_title('Ethereum Price Prediction - Next 2 Hours\nHistorical Data + Multi-Model Ensemble Forecast', 
+    ax1.set_title('Ethereum Price Prediction - Next 4 Days (96 Hours)\nHistorical Data + Multi-Model Ensemble Forecast', 
                  fontsize=14, fontweight='bold', pad=20)
     ax1.legend(loc='upper left', fontsize=10, framealpha=0.9)
     ax1.grid(True, alpha=0.3)
-    ax1.xaxis.set_major_formatter(mdates.DateFormatter('%H:%M'))
+    ax1.xaxis.set_major_formatter(mdates.DateFormatter('%m-%d %H:%M'))
     plt.setp(ax1.xaxis.get_majorticklabels(), rotation=45)
     
     # Add text box with current analysis
@@ -165,34 +165,34 @@ def plot_technical_indicators():
     Plot technical indicators with predictions
     """
     # Load data
-    df_1m = pd.read_csv(os.path.join(BASE_DIR, 'eth_1m_data.csv'))
-    df_1m['timestamp'] = pd.to_datetime(df_1m['timestamp'])
+    df_4h = pd.read_csv(os.path.join(BASE_DIR, 'eth_4h_data.csv'))
+    df_4h['timestamp'] = pd.to_datetime(df_4h['timestamp'])
     
     # Calculate indicators
-    df_1m['SMA_20'] = df_1m['close'].rolling(window=20).mean()
-    df_1m['EMA_10'] = df_1m['close'].ewm(span=10, adjust=False).mean()
+    df_4h['SMA_20'] = df_4h['close'].rolling(window=20).mean()
+    df_4h['EMA_10'] = df_4h['close'].ewm(span=10, adjust=False).mean()
     
     # RSI
-    delta = df_1m['close'].diff()
+    delta = df_4h['close'].diff()
     gain = (delta.where(delta > 0, 0)).rolling(window=14).mean()
     loss = (-delta.where(delta < 0, 0)).rolling(window=14).mean()
     rs = gain / loss
-    df_1m['RSI'] = 100 - (100 / (1 + rs))
+    df_4h['RSI'] = 100 - (100 / (1 + rs))
     
     # MACD
-    exp1 = df_1m['close'].ewm(span=12, adjust=False).mean()
-    exp2 = df_1m['close'].ewm(span=26, adjust=False).mean()
-    df_1m['MACD'] = exp1 - exp2
-    df_1m['MACD_signal'] = df_1m['MACD'].ewm(span=9, adjust=False).mean()
+    exp1 = df_4h['close'].ewm(span=12, adjust=False).mean()
+    exp2 = df_4h['close'].ewm(span=26, adjust=False).mean()
+    df_4h['MACD'] = exp1 - exp2
+    df_4h['MACD_signal'] = df_4h['MACD'].ewm(span=9, adjust=False).mean()
     
     # Bollinger Bands
-    df_1m['BB_middle'] = df_1m['close'].rolling(window=20).mean()
-    bb_std = df_1m['close'].rolling(window=20).std()
-    df_1m['BB_upper'] = df_1m['BB_middle'] + (bb_std * 2)
-    df_1m['BB_lower'] = df_1m['BB_middle'] - (bb_std * 2)
+    df_4h['BB_middle'] = df_4h['close'].rolling(window=20).mean()
+    bb_std = df_4h['close'].rolling(window=20).std()
+    df_4h['BB_upper'] = df_4h['BB_middle'] + (bb_std * 2)
+    df_4h['BB_lower'] = df_4h['BB_middle'] - (bb_std * 2)
     
-    # Use last 120 minutes
-    df_recent = df_1m.tail(120)
+    # Use last 30 periods (5 days)
+    df_recent = df_4h.tail(30)
     
     # Create subplots
     fig, axes = plt.subplots(4, 1, figsize=(16, 12), sharex=True)
@@ -204,7 +204,7 @@ def plot_technical_indicators():
     axes[0].plot(df_recent['timestamp'], df_recent['BB_lower'], label='BB Lower', color='green', linestyle='--', alpha=0.5)
     axes[0].fill_between(df_recent['timestamp'], df_recent['BB_lower'], df_recent['BB_upper'], alpha=0.1, color='gray')
     axes[0].set_ylabel('Price (USD)', fontweight='bold')
-    axes[0].set_title('Ethereum Technical Indicators - Last 2 Hours', fontsize=14, fontweight='bold', pad=20)
+    axes[0].set_title('Ethereum Technical Indicators - Last 5 Days (30 periods)', fontsize=14, fontweight='bold', pad=20)
     axes[0].legend(loc='upper left')
     axes[0].grid(True, alpha=0.3)
     
@@ -301,12 +301,12 @@ def plot_short_term_focus():
                 fontsize=14, fontweight='bold', pad=20)
     ax.legend(loc='upper left', fontsize=11, framealpha=0.9)
     ax.grid(True, alpha=0.3)
-    ax.xaxis.set_major_formatter(mdates.DateFormatter('%H:%M'))
+    ax.xaxis.set_major_formatter(mdates.DateFormatter('%m-%d %H:%M'))
     plt.setp(ax.xaxis.get_majorticklabels(), rotation=45)
     
     # Add annotations
-    final_pred_price = pred_60m['ensemble'].iloc[-1]
-    final_pred_time = pred_60m['timestamp'].iloc[-1]
+    final_pred_price = pred_48h['ensemble'].iloc[-1]
+    final_pred_time = pred_48h['timestamp'].iloc[-1]
     change_pct = ((final_pred_price / current_price) - 1) * 100
     
     ax.annotate(f'Predicted: ${final_pred_price:.2f}\n({change_pct:+.2f}%)',
@@ -331,7 +331,7 @@ def main():
     
     plot_predictions_overview()
     plot_technical_indicators()
-    plot_short_term_focus()
+    plot_4hour_prediction()
     
     print("\n=== All Visualizations Created ===")
 
