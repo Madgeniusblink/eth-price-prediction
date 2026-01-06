@@ -18,10 +18,10 @@ def plot_predictions_overview():
         predictions = json.load(f)
     
     current_price = predictions['current_price']
-    pred_4h = predictions['predictions']['4h']
-    pred_8h = predictions['predictions']['8h']
-    pred_24h = predictions['predictions']['24h']
-    pred_48h = predictions['predictions']['48h']
+    pred_4h = predictions['predictions']['4h']['price']
+    pred_8h = predictions['predictions']['8h']['price']
+    pred_24h = predictions['predictions']['24h']['price']
+    pred_48h = predictions['predictions']['48h']['price']
     
     # Create figure
     fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(16, 12))
@@ -140,10 +140,10 @@ def plot_4hour_prediction():
         predictions = json.load(f)
     
     current_price = predictions['current_price']
-    pred_4h = predictions['predictions']['4h']
-    pred_8h = predictions['predictions']['8h']
-    pred_24h = predictions['predictions']['24h']
-    pred_48h = predictions['predictions']['48h']
+    pred_4h = predictions['predictions']['4h']['price']
+    pred_8h = predictions['predictions']['8h']['price']
+    pred_24h = predictions['predictions']['24h']['price']
+    pred_48h = predictions['predictions']['48h']['price']
     
     # Use last 24 periods (4 days) of historical data
     df_recent = df_4h.tail(24)
