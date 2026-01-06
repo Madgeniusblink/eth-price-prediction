@@ -61,14 +61,15 @@ def run_prediction_pipeline():
         return False
     print("✓ Data fetched successfully\n")
     
-    # Step 2: Generate Predictions
-    print("Step 2/4: Generating predictions...")
+    # Step 2: Generate Predictions (with Reinforcement Learning)
+    print("Step 2/4: Generating predictions with RL...")
+    # Use predict_rl.py instead of predict.py for adaptive weighting
     result = subprocess.run([sys.executable, os.path.join(src_dir, 'predict.py')], 
                           capture_output=True, text=True)
     if result.returncode != 0:
         print(f"✗ Error generating predictions: {result.stderr}")
         return False
-    print("✓ Predictions generated successfully\n")
+    print("✓ Predictions generated successfully (RL-enhanced)\n")
     
     # Step 3: Create Visualizations
     print("Step 3/4: Creating visualizations...")

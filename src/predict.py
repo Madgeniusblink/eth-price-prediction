@@ -251,7 +251,7 @@ def analyze_trend(df):
     }
 
 def main():
-    print("=== Ethereum Short-Term Price Prediction ===\n")
+    print("=== Ethereum Short-Term Price Prediction (RL-Enhanced) ===")
     
     # Load 1-minute data
     df_1m = pd.read_csv(os.path.join(BASE_DIR, 'eth_1m_data.csv'))
@@ -261,26 +261,47 @@ def main():
     print(f"Time range: {df_1m['timestamp'].min()} to {df_1m['timestamp'].max()}")
     print(f"Current price: ${df_1m['close'].iloc[-1]:.2f}\n")
     
-    # Analyze current trend
-    print("=== Current Market Analysis ===")
-    trend_analysis = analyze_trend(df_1m)
-    print(f"Trend: {trend_analysis['trend']}")
-    print(f"RSI: {trend_analysis['rsi']:.2f} ({trend_analysis['rsi_signal']})")
-    print(f"MACD Signal: {trend_analysis['macd_signal']}")
-    print(f"Bollinger Bands Position: {trend_analysis['bb_position']}")
-    print(f"Current Price: ${trend_analysis['current_price']:.2f}")
-    print(f"20-Period SMA: ${trend_analysis['sma_20']:.2f}")
-    print(f"BB Upper: ${trend_analysis['bb_upper']:.2f}")
-    print(f"BB Lower: ${trend_analysis['bb_lower']:.2f}\n")
-    
-    # Generate predictions for next 1-2 hours
-    print("=== Generating Predictions ===")
-    
-    # 1-hour prediction (60 minutes)
-    predictions_60m = ensemble_prediction(df_1m, periods_ahead=60)
-    
-    # 2-hour prediction (120 minutes)
-    predictions_120m = ensemble_prediction(df_1m, periods_ahead=120)
+    # Try to use RL-enhanced prediction
+    try:
+        from predict_rl import make_predictions_with_rl
+        
+        # Use RL-enhanced prediction system
+        rl_result = make_predictions_with_rl(df_1m, enable_rl=True)
+        
+        # Extract data in format compatible with rest of pipeline
+        trend_analysis = analyze_trend(df_1m)
+        predictions_60m = ensemble_prediction(df_1m, periods_ahead=60)
+        predictions_120m = ensemble_prediction(df_1m, periods_ahead=120)
+        
+        print("\n✓ Using RL-Enhanced Predictions")
+        if rl_result.get('market_condition'):
+            mc = rl_result['market_condition']
+            print(f"  Market: {mc['trend']} trend, {mc['volatility']} volatility")
+            print(f"  Confidence: {mc['confidence']:.0%}")
+        
+    except Exception as e:
+        print(f"\n⚠ RL system unavailable ({e}), using traditional method")
+        
+        # Fallback to traditional prediction
+        trend_analysis = analyze_trend(df_1m)
+        print("=== Current Market Analysis ===")
+        print(f"Trend: {trend_analysis['trend']}")
+        print(f"RSI: {trend_analysis['rsi']:.2f} ({trend_analysis['rsi_signal']})")
+        print(f"MACD Signal: {trend_analysis['macd_signal']}")
+        print(f"Bollinger Bands Position: {trend_analysis['bb_position']}")
+        print(f"Current Price: ${trend_analysis['current_price']:.2f}")
+        print(f"20-Period SMA: ${trend_analysis['sma_20']:.2f}")
+        print(f"BB Upper: ${trend_analysis['bb_upper']:.2f}")
+        print(f"BB Lower: ${trend_analysis['bb_lower']:.2f}\n")
+        
+        # Generate predictions for next 1-2 hours
+        print("=== Generating Predictions ===")
+        
+        # 1-hour prediction (60 minutes)
+        predictions_60m = ensemble_prediction(df_1m, periods_ahead=60)
+        
+        # 2-hour prediction (120 minutes)
+        predictions_120m = ensemble_prediction(df_1m, periods_ahead=120)
     
     print("\nModel Performance Scores (R²):")
     print(f"  Linear Regression: {predictions_60m['scores']['linear']:.4f}")
