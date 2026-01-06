@@ -1,4 +1,4 @@
-import os
+import sys
 #!/usr/bin/env python3
 """
 Fetch Ethereum price data from multiple sources for swing trading (4-hour timeframe)
@@ -10,6 +10,49 @@ import time
 from datetime import datetime, timedelta
 import pandas as pd
 from config import BASE_DIR
+
+def fetch_cryptocompare_data(symbol='ETH', interval='hour', limit=500):
+    """
+    Fetch historical data from CryptoCompare (fallback when Binance is blocked)
+    """
+    url = 'https://min-api.cryptocompare.com/data/v2/histohour'
+    params = {
+        'fsym': symbol,
+        'tsym': 'USD',
+        'limit': limit
+    }
+    
+    try:
+        response = requests.get(url, params=params, timeout=10)
+        response.raise_for_status()
+        data = response.json()
+        
+        if data.get('Response') != 'Success':
+            raise Exception(f"CryptoCompare API error: {data.get('Message', 'Unknown error')}")
+        
+        candles = data['Data']['Data']
+        
+        # Convert to DataFrame
+        df = pd.DataFrame(candles)
+        df['timestamp'] = pd.to_datetime(df['time'], unit='s')
+        df['close'] = df['close'].astype(float)
+        df['open'] = df['open'].astype(float)
+        df['high'] = df['high'].astype(float)
+        df['low'] = df['low'].astype(float)
+        df['volume'] = df['volumefrom'].astype(float)
+        
+        # Select relevant columns
+        df = df[['timestamp', 'open', 'high', 'low', 'close', 'volume']]
+        
+        print(f"✓ Fetched {len(df)} candles from CryptoCompare")
+        print(f"  Time range: {df['timestamp'].min()} to {df['timestamp'].max()}")
+        print(f"  Current price: ${df['close'].iloc[-1]:.2f}")
+        
+        return df
+        
+    except Exception as e:
+        print(f"✗ Error fetching CryptoCompare data: {e}")
+        return None
 
 def fetch_binance_data(symbol='ETHUSDT', interval='1m', limit=500):
     """
@@ -128,7 +171,24 @@ def main():
     print("\n=== Fetching Historical Data ===\n")
     
     # Fetch 4-hour data from Binance (last ~83 days with 500 candles)
+    # If Binance fails (common in cloud environments), use CryptoCompare
     df_4h = fetch_binance_data(symbol='ETHUSDT', interval='4h', limit=500)
+    if df_4h is None:
+        print("  Binance blocked, trying CryptoCompare...")
+        # CryptoCompare only supports hourly data, so we'll resample it to 4h
+        df_1h_temp = fetch_cryptocompare_data(symbol='ETH', interval='hour', limit=2000)
+        if df_1h_temp is not None:
+            # Resample hourly data to 4-hour candles
+            df_1h_temp.set_index('timestamp', inplace=True)
+            df_4h = df_1h_temp.resample('4H').agg({
+                'open': 'first',
+                'high': 'max',
+                'low': 'min',
+                'close': 'last',
+                'volume': 'sum'
+            }).dropna().reset_index()
+            print(f"  ✓ Created {len(df_4h)} 4-hour candles from hourly data")
+    
     if df_4h is not None:
         df_4h.to_csv(os.path.join(BASE_DIR, 'eth_4h_data.csv'), index=False)
         print(f"  Saved to: {os.path.join(BASE_DIR, 'eth_4h_data.csv')}")
@@ -136,7 +196,12 @@ def main():
     print()
     
     # Fetch 1-hour data from Binance (last ~20 days)
+    # If Binance fails, use CryptoCompare
     df_1h = fetch_binance_data(symbol='ETHUSDT', interval='1h', limit=500)
+    if df_1h is None:
+        print("  Binance blocked, trying CryptoCompare...")
+        df_1h = fetch_cryptocompare_data(symbol='ETH', interval='hour', limit=500)
+    
     if df_1h is not None:
         df_1h.to_csv(os.path.join(BASE_DIR, 'eth_1h_data.csv'), index=False)
         print(f"  Saved to: {os.path.join(BASE_DIR, 'eth_1h_data.csv')}")
