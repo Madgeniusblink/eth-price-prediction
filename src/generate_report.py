@@ -274,19 +274,19 @@ def generate_markdown_report(predictions, trading_signals, timestamp, copied_fil
 
 Complete view of historical data, predictions from all models, and ensemble forecast with confidence intervals.
 
-![Prediction Overview](overview.png)
+![Prediction Overview](eth_prediction_overview.png)
 
 ### 1-Hour Focused Prediction
 
 Detailed near-term view with trend lines and prediction paths.
 
-![1-Hour Prediction](1hour.png)
+![1-Hour Prediction](eth_1hour_prediction.png)
 
 ### Technical Indicators
 
 Comprehensive analysis of all technical indicators.
 
-![Technical Indicators](indicators.png)
+![Technical Indicators](eth_technical_indicators.png)
 
 ---
 

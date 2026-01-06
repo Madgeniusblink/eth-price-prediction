@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Send formatted Slack notifications with ETH price predictions and charts.
-Clean, professional design without emojis.
+Clean, professional design without emojis, includes chart images.
 """
 
 import os
@@ -84,6 +84,12 @@ def send_slack_notification(predictions_file, signals_file, report_url):
         'HOLD': '#95a5a6'    # Gray
     }
     color = signal_colors.get(signal, '#95a5a6')
+    
+    # GitHub raw URLs for chart images
+    repo_url = "https://raw.githubusercontent.com/Madgeniusblink/eth-price-prediction/main/reports/latest"
+    overview_img = f"{repo_url}/eth_prediction_overview.png"
+    hour_img = f"{repo_url}/eth_1hour_prediction.png"
+    indicators_img = f"{repo_url}/eth_technical_indicators.png"
     
     # Build the message payload
     payload = {
@@ -271,6 +277,31 @@ def send_slack_notification(predictions_file, signals_file, report_url):
                         "type": "divider"
                     },
                     {
+                        "type": "section",
+                        "text": {
+                            "type": "mrkdwn",
+                            "text": "*PREDICTION CHARTS*"
+                        }
+                    },
+                    {
+                        "type": "image",
+                        "image_url": overview_img,
+                        "alt_text": "Prediction Overview Chart"
+                    },
+                    {
+                        "type": "image",
+                        "image_url": hour_img,
+                        "alt_text": "1-Hour Prediction Chart"
+                    },
+                    {
+                        "type": "image",
+                        "image_url": indicators_img,
+                        "alt_text": "Technical Indicators Chart"
+                    },
+                    {
+                        "type": "divider"
+                    },
+                    {
                         "type": "actions",
                         "elements": [
                             {
@@ -306,6 +337,7 @@ def send_slack_notification(predictions_file, signals_file, report_url):
         print(f"  Signal: {signal}")
         print(f"  Price: ${current_price:,.2f}")
         print(f"  Confidence: {confidence}")
+        print(f"  Charts included: 3 images")
     except requests.exceptions.RequestException as e:
         print(f"Error sending Slack notification: {e}")
         if hasattr(e, 'response') and e.response is not None:

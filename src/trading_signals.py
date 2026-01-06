@@ -206,11 +206,14 @@ class TradingSignals:
     
     def generate_entry_signals(self):
         """
-        Generate buy/sell/short entry signals
+        Generate buy/sell/short entry signals with user context awareness
         
         Returns:
             dict with signal information
         """
+        # Load user context
+        user_context = self._load_user_context()
+        
         latest = self.df.iloc[-1]
         trend = self.detect_trend()
         levels = self.find_support_resistance()
@@ -294,6 +297,9 @@ class TradingSignals:
         # Calculate entry, stop loss, and target
         entry_levels = self._calculate_entry_levels(signal, latest, levels, trend)
         
+        # Apply user context to refine action recommendation
+        action, reasoning_suffix = self._apply_user_context(signal, action, user_context, latest['close'])
+        
         return {
             'signal': signal,
             'action': action,
@@ -308,7 +314,8 @@ class TradingSignals:
             'stop_loss': entry_levels['stop_loss'],
             'target': entry_levels['target'],
             'risk_reward': entry_levels['risk_reward'],
-            'reasoning': self._generate_reasoning(signal, latest, trend, levels)
+            'reasoning': self._generate_reasoning(signal, latest, trend, levels) + reasoning_suffix,
+            'user_context': user_context
         }
     
     def _calculate_entry_levels(self, signal, latest, levels, trend):
@@ -385,6 +392,89 @@ class TradingSignals:
             reasons.append(f"Resistance at ${levels['nearest_resistance']:.2f} ({distance:.1f}% above)")
         
         return reasons
+    
+    def _load_user_context(self):
+        """Load user context from configuration file"""
+        import os
+        from config import BASE_DIR
+        
+        context_file = os.path.join(BASE_DIR, 'user_context.json')
+        
+        try:
+            with open(context_file, 'r') as f:
+                context = json.load(f)
+            return context
+        except FileNotFoundError:
+            # Return default context if file doesn't exist
+            return {
+                'trade_status': 'OUT_OF_TRADE',
+                'position': {
+                    'entry_price': 0,
+                    'position_size': 0,
+                    'entry_time': None,
+                    'type': 'LONG'
+                }
+            }
+    
+    def _apply_user_context(self, signal, action, user_context, current_price):
+        """Apply user context to refine action recommendations"""
+        trade_status = user_context.get('trade_status', 'OUT_OF_TRADE')
+        position = user_context.get('position', {})
+        entry_price = position.get('entry_price', 0)
+        position_type = position.get('type', 'LONG')
+        
+        reasoning_suffix = ""
+        
+        if trade_status == 'IN_TRADE':
+            # User is currently in a trade
+            if position_type == 'LONG':
+                pnl_percent = ((current_price - entry_price) / entry_price) * 100 if entry_price > 0 else 0
+                
+                if signal == 'BUY':
+                    action = f"Hold current long position (P/L: {pnl_percent:+.2f}%) or add to position"
+                    reasoning_suffix = f"\n\nYou are currently IN A LONG TRADE at ${entry_price:.2f}. Consider holding or adding to your position."
+                elif signal == 'SELL':
+                    action = f"EXIT LONG POSITION NOW (P/L: {pnl_percent:+.2f}%)"
+                    reasoning_suffix = f"\n\n⚠️ You are currently IN A LONG TRADE at ${entry_price:.2f}. Strong exit signal detected. Consider taking profits or cutting losses."
+                elif signal == 'SHORT':
+                    action = f"EXIT LONG and consider SHORT entry (Current P/L: {pnl_percent:+.2f}%)"
+                    reasoning_suffix = f"\n\n⚠️ You are currently IN A LONG TRADE at ${entry_price:.2f}. Market turning bearish - consider exiting and potentially reversing to short."
+                elif signal == 'WAIT' or signal == 'HOLD':
+                    action = f"Hold current long position (P/L: {pnl_percent:+.2f}%)"
+                    reasoning_suffix = f"\n\nYou are currently IN A LONG TRADE at ${entry_price:.2f}. No clear signal - continue holding."
+            
+            elif position_type == 'SHORT':
+                pnl_percent = ((entry_price - current_price) / entry_price) * 100 if entry_price > 0 else 0
+                
+                if signal == 'SHORT':
+                    action = f"Hold current short position (P/L: {pnl_percent:+.2f}%)"
+                    reasoning_suffix = f"\n\nYou are currently IN A SHORT TRADE at ${entry_price:.2f}. Consider holding your position."
+                elif signal == 'BUY':
+                    action = f"COVER SHORT POSITION NOW (P/L: {pnl_percent:+.2f}%)"
+                    reasoning_suffix = f"\n\n⚠️ You are currently IN A SHORT TRADE at ${entry_price:.2f}. Strong bullish signal - consider covering your short."
+                elif signal == 'SELL':
+                    action = f"Cover short and exit (Current P/L: {pnl_percent:+.2f}%)"
+                    reasoning_suffix = f"\n\nYou are currently IN A SHORT TRADE at ${entry_price:.2f}. Exit signal detected."
+                elif signal == 'WAIT' or signal == 'HOLD':
+                    action = f"Hold current short position (P/L: {pnl_percent:+.2f}%)"
+                    reasoning_suffix = f"\n\nYou are currently IN A SHORT TRADE at ${entry_price:.2f}. No clear signal - continue holding."
+        
+        else:  # OUT_OF_TRADE
+            # User is not currently in a trade
+            if signal == 'BUY':
+                action = "ENTER LONG POSITION - Good entry opportunity"
+                reasoning_suffix = "\n\nYou are currently OUT OF TRADE. This is a good opportunity to enter a long position."
+            elif signal == 'SHORT':
+                action = "ENTER SHORT POSITION - Good entry opportunity"
+                reasoning_suffix = "\n\nYou are currently OUT OF TRADE. This is a good opportunity to enter a short position."
+            elif signal == 'SELL':
+                action = "STAY OUT - Wait for better entry"
+                reasoning_suffix = "\n\nYou are currently OUT OF TRADE. Exit signal detected but you have no position. Stay on the sidelines."
+            elif signal == 'WAIT' or signal == 'HOLD':
+                action = "WAIT - No clear entry signal"
+                reasoning_suffix = "\n\nYou are currently OUT OF TRADE. No clear entry opportunity. Wait for a better setup."
+        
+        return action, reasoning_suffix
 
 def main():
     """Test the trading signals module"""
