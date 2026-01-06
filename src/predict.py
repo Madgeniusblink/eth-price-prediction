@@ -394,6 +394,8 @@ def main():
         json.dump(predictions_data, f, indent=2)
     
     print("\n=== Prediction Files Saved ===")
+    print(f"  Prediction keys: {list(predictions_data['predictions'].keys())}")
+    print(f"  4h prediction: ${predictions_data['predictions']['4h']['price']:.2f}")
     print(f"  {os.path.join(BASE_DIR, 'predictions_48h.csv')}")
     print(f"  {os.path.join(BASE_DIR, 'predictions_96h.csv')}")
     print(f"  {os.path.join(BASE_DIR, 'predictions_summary.json')}")
