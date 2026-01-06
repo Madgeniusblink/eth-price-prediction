@@ -34,10 +34,10 @@ def send_slack_notification(predictions_file, signals_file, report_url):
     # Extract data with safe fallbacks
     current_price = predictions.get('current_price', 0)
     preds = predictions.get('predictions', {})
-    pred_15m = preds.get('15min', preds.get('15m', {}))
-    pred_30m = preds.get('30min', preds.get('30m', {}))
-    pred_1h = preds.get('1hour', preds.get('1h', {}))
-    pred_2h = preds.get('2hour', preds.get('2h', {}))
+    pred_4h = preds.get('4hour', preds.get('4h', {}))
+    pred_8h = preds.get('8hour', preds.get('8h', {}))
+    pred_24h = preds.get('24hour', preds.get('24h', {}))
+    pred_48h = preds.get('48hour', preds.get('48h', {}))
     
     # Extract trading signal data from correct structure
     trading_signal = signals.get('trading_signal', {})
@@ -71,7 +71,7 @@ def send_slack_notification(predictions_file, signals_file, report_url):
     
     # Calculate volume trend and volatility from recent price action
     volume_trend = "INCREASING" if trend == "BULL MARKET" else "DECREASING" if trend == "BEAR MARKET" else "STABLE"
-    volatility_level = "HIGH" if abs(pred_1h.get('change_percent', 0)) > 2 else "MEDIUM" if abs(pred_1h.get('change_percent', 0)) > 1 else "LOW"
+    volatility_level = "HIGH" if abs(pred_24h.get('change_pct', pred_24h.get('change_percent', 0))) > 5 else "MEDIUM" if abs(pred_24h.get('change_pct', pred_24h.get('change_percent', 0))) > 2 else "LOW"
     
     timestamp = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC')
     
@@ -87,7 +87,7 @@ def send_slack_notification(predictions_file, signals_file, report_url):
     # GitHub raw URLs for chart images
     repo_url = "https://raw.githubusercontent.com/Madgeniusblink/eth-price-prediction/main/reports/latest"
     overview_img = f"{repo_url}/eth_prediction_overview.png"
-    hour_img = f"{repo_url}/eth_1hour_prediction.png"
+    hour_img = f"{repo_url}/eth_4hour_prediction.png"
     indicators_img = f"{repo_url}/eth_technical_indicators.png"
     
     # Build the message payload
@@ -163,19 +163,19 @@ def send_slack_notification(predictions_file, signals_file, report_url):
                         "fields": [
                             {
                                 "type": "mrkdwn",
-                                "text": f"*15 min:*\n${pred_15m.get('price', 0):,.2f} ({pred_15m.get('change_percent', 0):+.2f}%)"
+                                "text": f"*4 hours:*\n${pred_4h.get('price', 0):,.2f} ({pred_4h.get('change_pct', pred_4h.get('change_percent', 0)):+.2f}%)"
                             },
                             {
                                 "type": "mrkdwn",
-                                "text": f"*30 min:*\n${pred_30m.get('price', 0):,.2f} ({pred_30m.get('change_percent', 0):+.2f}%)"
+                                "text": f"*8 hours:*\n${pred_8h.get('price', 0):,.2f} ({pred_8h.get('change_pct', pred_8h.get('change_percent', 0)):+.2f}%)"
                             },
                             {
                                 "type": "mrkdwn",
-                                "text": f"*1 hour:*\n${pred_1h.get('price', 0):,.2f} ({pred_1h.get('change_percent', 0):+.2f}%)"
+                                "text": f"*24 hours:*\n${pred_24h.get('price', 0):,.2f} ({pred_24h.get('change_pct', pred_24h.get('change_percent', 0)):+.2f}%)"
                             },
                             {
                                 "type": "mrkdwn",
-                                "text": f"*2 hours:*\n${pred_2h.get('price', 0):,.2f} ({pred_2h.get('change_percent', 0):+.2f}%)"
+                                "text": f"*48 hours:*\n${pred_48h.get('price', 0):,.2f} ({pred_48h.get('change_pct', pred_48h.get('change_percent', 0)):+.2f}%)"
                             }
                         ]
                     },
@@ -290,7 +290,7 @@ def send_slack_notification(predictions_file, signals_file, report_url):
                     {
                         "type": "image",
                         "image_url": hour_img,
-                        "alt_text": "1-Hour Prediction Chart"
+                        "alt_text": "4-Hour Prediction Chart"
                     },
                     {
                         "type": "image",
