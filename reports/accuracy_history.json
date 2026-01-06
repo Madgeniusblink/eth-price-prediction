@@ -1,0 +1,85 @@
+{
+  "predictions": [
+    {
+      "id": "2026-01-06T03:13:30.702101",
+      "prediction_time": "2026-01-06T03:13:30.702101",
+      "current_price": 3248.16,
+      "market_condition": "neutral_low_volatility",
+      "predictions": {
+        "15min": {
+          "timestamp": "2026-01-06T03:28:30.702101",
+          "ensemble_price": 3251.9154109741457,
+          "models": {
+            "linear": 3242.904665166516,
+            "polynomial": 3263.726867755923,
+            "random_forest": 3249.114699999998
+          },
+          "weights": {
+            "linear": 0.3333333333333333,
+            "polynomial": 0.3333333333333333,
+            "ml_features": 0.3333333333333333
+          }
+        },
+        "30min": {
+          "timestamp": "2026-01-06T03:43:30.702101",
+          "ensemble_price": 3258.894229698755,
+          "models": {
+            "linear": 3246.613657065706,
+            "polynomial": 3280.9543320305625,
+            "random_forest": 3249.114699999998
+          },
+          "weights": {
+            "linear": 0.3333333333333333,
+            "polynomial": 0.3333333333333333,
+            "ml_features": 0.3333333333333333
+          }
+        },
+        "60min": {
+          "timestamp": "2026-01-06T04:13:30.702101",
+          "ensemble_price": 3275.6682155595263,
+          "models": {
+            "linear": 3254.031640864086,
+            "polynomial": 3323.858305814496,
+            "random_forest": 3249.114699999998
+          },
+          "weights": {
+            "linear": 0.3333333333333333,
+            "polynomial": 0.3333333333333333,
+            "ml_features": 0.3333333333333333
+          }
+        },
+        "120min": {
+          "timestamp": "2026-01-06T05:13:30.702101",
+          "ensemble_price": 3320.481580927276,
+          "models": {
+            "linear": 3268.8676084608455,
+            "polynomial": 3443.4624343209853,
+            "random_forest": 3249.114699999998
+          },
+          "weights": {
+            "linear": 0.3333333333333333,
+            "polynomial": 0.3333333333333333,
+            "ml_features": 0.3333333333333333
+          }
+        }
+      },
+      "model_weights": {
+        "linear": 0.3333333333333333,
+        "polynomial": 0.3333333333333333,
+        "ml_features": 0.3333333333333333
+      },
+      "validated": false
+    }
+  ],
+  "validations": [],
+  "summary": {
+    "total_predictions": 0,
+    "total_validations": 0,
+    "ensemble_avg_error_pct": 0,
+    "linear_avg_error_pct": 0,
+    "polynomial_avg_error_pct": 0,
+    "random_forest_avg_error_pct": 0,
+    "directional_accuracy": 0,
+    "last_updated": null
+  }
+}
