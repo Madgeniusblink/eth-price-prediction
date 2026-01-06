@@ -262,47 +262,30 @@ def main():
     print(f"Time range: {df_4h['timestamp'].min()} to {df_4h['timestamp'].max()}")
     print(f"Current price: ${df_4h['close'].iloc[-1]:.2f}\n")
     
-    # Try to use RL-enhanced prediction
-    try:
-        from predict_rl import make_predictions_with_rl
-        
-        # Use RL-enhanced prediction system
-        rl_result = make_predictions_with_rl(df_4h, enable_rl=True)
-        
-        # Extract data in format compatible with rest of pipeline
-        trend_analysis = analyze_trend(df_4h)
-        predictions_12p = ensemble_prediction(df_4h, periods_ahead=12)  # 48 hours
-        predictions_24p = ensemble_prediction(df_4h, periods_ahead=24)  # 96 hours
-        
-        print("\n✓ Using RL-Enhanced Predictions")
-        if rl_result.get('market_condition'):
-            mc = rl_result['market_condition']
-            print(f"  Market: {mc['trend']} trend, {mc['volatility']} volatility")
-            print(f"  Confidence: {mc['confidence']:.0%}")
-        
-    except Exception as e:
-        print(f"\n⚠ RL system unavailable ({e}), using traditional method")
-        
-        # Fallback to traditional prediction
-        trend_analysis = analyze_trend(df_4h)
-        print("=== Current Market Analysis ===")
-        print(f"Trend: {trend_analysis['trend']}")
-        print(f"RSI: {trend_analysis['rsi']:.2f} ({trend_analysis['rsi_signal']})")
-        print(f"MACD Signal: {trend_analysis['macd_signal']}")
-        print(f"Bollinger Bands Position: {trend_analysis['bb_position']}")
-        print(f"Current Price: ${trend_analysis['current_price']:.2f}")
-        print(f"20-Period SMA: ${trend_analysis['sma_20']:.2f}")
-        print(f"BB Upper: ${trend_analysis['bb_upper']:.2f}")
-        print(f"BB Lower: ${trend_analysis['bb_lower']:.2f}\n")
-        
-        # Generate predictions for next 2-4 days
-        print("=== Generating Predictions ===")
-        
-        # 48-hour prediction (12 periods of 4h)
-        predictions_12p = ensemble_prediction(df_4h, periods_ahead=12)
-        
-        # 96-hour prediction (24 periods of 4h)
-        predictions_24p = ensemble_prediction(df_4h, periods_ahead=24)
+    # Use traditional prediction method for 4-hour timeframe
+    # (RL system is optimized for minute-based predictions)
+    print("\n✓ Using Traditional Ensemble Method (4-Hour Timeframe)")
+    
+    # Traditional prediction
+    trend_analysis = analyze_trend(df_4h)
+    print("=== Current Market Analysis ===")
+    print(f"Trend: {trend_analysis['trend']}")
+    print(f"RSI: {trend_analysis['rsi']:.2f} ({trend_analysis['rsi_signal']})")
+    print(f"MACD Signal: {trend_analysis['macd_signal']}")
+    print(f"Bollinger Bands Position: {trend_analysis['bb_position']}")
+    print(f"Current Price: ${trend_analysis['current_price']:.2f}")
+    print(f"20-Period SMA: ${trend_analysis['sma_20']:.2f}")
+    print(f"BB Upper: ${trend_analysis['bb_upper']:.2f}")
+    print(f"BB Lower: ${trend_analysis['bb_lower']:.2f}\n")
+    
+    # Generate predictions for next 2-4 days
+    print("=== Generating Predictions ===")
+    
+    # 48-hour prediction (12 periods of 4h)
+    predictions_12p = ensemble_prediction(df_4h, periods_ahead=12)
+    
+    # 96-hour prediction (24 periods of 4h)
+    predictions_24p = ensemble_prediction(df_4h, periods_ahead=24)
     
     print("\nModel Performance Scores (R²):")
     print(f"  Linear Regression: {predictions_12p['scores']['linear']:.4f}")
