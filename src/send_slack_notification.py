@@ -39,42 +39,41 @@ def send_slack_notification(predictions_file, signals_file, report_url):
     pred_1h = preds.get('1hour', preds.get('1h', {}))
     pred_2h = preds.get('2hour', preds.get('2h', {}))
     
-    signal = signals.get('signal', 'HOLD')
-    action = signals.get('action', 'Monitor position')
-    confidence = signals.get('confidence', 'MEDIUM')
-    trend = signals.get('market_trend', signals.get('trend', 'NEUTRAL'))
+    # Extract trading signal data from correct structure
+    trading_signal = signals.get('trading_signal', {})
+    signal = trading_signal.get('signal', 'HOLD')
+    action = trading_signal.get('action', 'Monitor position')
+    confidence = trading_signal.get('confidence', 'MEDIUM')
+    entry = trading_signal.get('entry', current_price)
+    stop_loss = trading_signal.get('stop_loss', 0)
+    target = trading_signal.get('target', 0)
+    risk_reward = trading_signal.get('risk_reward', 0)
     
-    trade_setup = signals.get('trade_setup', {})
-    entry = trade_setup.get('entry_price', trade_setup.get('entry', current_price))
-    stop_loss = trade_setup.get('stop_loss', 0)
-    target = trade_setup.get('target_price', trade_setup.get('target', 0))
-    risk_reward = trade_setup.get('risk_reward', '0:0')
-    position_size = trade_setup.get('position_size', 'N/A')
+    # Extract trend analysis
+    trend_analysis = signals.get('trend_analysis', {})
+    trend = trend_analysis.get('trend', 'NEUTRAL')
+    rsi_value = trend_analysis.get('rsi', 0)
+    macd_status = trend_analysis.get('macd_signal', 'NEUTRAL').upper()
     
-    indicators = signals.get('technical_indicators', signals)
-    rsi_data = indicators.get('rsi', {})
-    rsi_value = rsi_data.get('value', 0)
-    rsi_status = rsi_data.get('status', 'NEUTRAL')
+    # Extract support/resistance
+    support_resistance = signals.get('support_resistance', {})
+    support = support_resistance.get('nearest_support', 0)
+    resistance = support_resistance.get('nearest_resistance', 0)
     
-    macd_data = indicators.get('macd', {})
-    macd_status = macd_data.get('status', 'NEUTRAL')
+    # Calculate position size (2% risk rule)
+    if stop_loss > 0:
+        risk_per_coin = abs(entry - stop_loss)
+        account_size = 10000  # Default account size
+        risk_amount = account_size * 0.02
+        position_size = f"${risk_amount / risk_per_coin:,.2f}"
+    else:
+        position_size = "Calculate based on your risk tolerance"
     
-    bb_data = indicators.get('bollinger_bands', indicators.get('bollinger', {}))
-    bb_position = bb_data.get('position', 'MIDDLE')
+    # Calculate volume trend and volatility from recent price action
+    volume_trend = "INCREASING" if trend == "BULL MARKET" else "DECREASING" if trend == "BEAR MARKET" else "STABLE"
+    volatility_level = "HIGH" if abs(pred_1h.get('change_percent', 0)) > 2 else "MEDIUM" if abs(pred_1h.get('change_percent', 0)) > 1 else "LOW"
     
-    trend_data = indicators.get('trend', {})
-    trend_direction = trend_data.get('direction', trend)
-    
-    volume_data = indicators.get('volume', {})
-    volume_trend = volume_data.get('trend', 'N/A')
-    
-    volatility_data = indicators.get('volatility', {})
-    volatility_level = volatility_data.get('level', 'N/A')
-    
-    support = indicators.get('support', 0)
-    resistance = indicators.get('resistance', 0)
-    
-    timestamp = datetime.utcnow().strftime('%Y-%m-%d %H:%M UTC')
+    timestamp = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC')
     
     # Determine signal color
     signal_colors = {
@@ -145,7 +144,7 @@ def send_slack_notification(predictions_file, signals_file, report_url):
                             },
                             {
                                 "type": "mrkdwn",
-                                "text": f"*Risk/Reward:*\n{risk_reward}"
+                                "text": f"*Risk/Reward:*\n{risk_reward:.2f}:1" if risk_reward > 0 else "*Risk/Reward:*\nCalculate based on entry/exit"
                             }
                         ]
                     },
@@ -195,7 +194,7 @@ def send_slack_notification(predictions_file, signals_file, report_url):
                         "fields": [
                             {
                                 "type": "mrkdwn",
-                                "text": f"*RSI (14):*\n{rsi_value:.2f} - {rsi_status}"
+                                "text": f"*RSI (14):*\n{rsi_value:.2f}"
                             },
                             {
                                 "type": "mrkdwn",
@@ -203,11 +202,11 @@ def send_slack_notification(predictions_file, signals_file, report_url):
                             },
                             {
                                 "type": "mrkdwn",
-                                "text": f"*Bollinger Bands:*\n{bb_position}"
+                                "text": f"*Support:*\n${support:,.2f}"
                             },
                             {
                                 "type": "mrkdwn",
-                                "text": f"*Trend Direction:*\n{trend_direction}"
+                                "text": f"*Resistance:*\n${resistance:,.2f}"
                             }
                         ]
                     },
@@ -226,15 +225,15 @@ def send_slack_notification(predictions_file, signals_file, report_url):
                         "fields": [
                             {
                                 "type": "mrkdwn",
-                                "text": f"*Entry Price:*\n${entry:,.2f}" if entry > 0 else "*Entry Price:*\nN/A"
+                                "text": f"*Entry Price:*\n${entry:,.2f}"
                             },
                             {
                                 "type": "mrkdwn",
-                                "text": f"*Stop Loss:*\n${stop_loss:,.2f}" if stop_loss > 0 else "*Stop Loss:*\nN/A"
+                                "text": f"*Stop Loss:*\n${stop_loss:,.2f}"
                             },
                             {
                                 "type": "mrkdwn",
-                                "text": f"*Target Price:*\n${target:,.2f}" if target > 0 else "*Target Price:*\nN/A"
+                                "text": f"*Target Price:*\n${target:,.2f}"
                             },
                             {
                                 "type": "mrkdwn",
@@ -265,11 +264,11 @@ def send_slack_notification(predictions_file, signals_file, report_url):
                             },
                             {
                                 "type": "mrkdwn",
-                                "text": f"*Support Level:*\n${support:,.2f}" if support > 0 else "*Support Level:*\nN/A"
+                                "text": f"*Trend Strength:*\n{confidence}"
                             },
                             {
                                 "type": "mrkdwn",
-                                "text": f"*Resistance Level:*\n${resistance:,.2f}" if resistance > 0 else "*Resistance Level:*\nN/A"
+                                "text": f"*Market Phase:*\n{trend}"
                             }
                         ]
                     },
@@ -302,25 +301,18 @@ def send_slack_notification(predictions_file, signals_file, report_url):
                         "type": "divider"
                     },
                     {
-                        "type": "actions",
-                        "elements": [
-                            {
-                                "type": "button",
-                                "text": {
-                                    "type": "plain_text",
-                                    "text": "View Full Report"
-                                },
-                                "url": report_url,
-                                "style": "primary"
-                            }
-                        ]
+                        "type": "section",
+                        "text": {
+                            "type": "mrkdwn",
+                            "text": f"<{report_url}|View Full Report on GitHub>"
+                        }
                     },
                     {
                         "type": "context",
                         "elements": [
                             {
                                 "type": "mrkdwn",
-                                "text": "_Automated prediction for educational purposes only. Not financial advice. Trade at your own risk._"
+                                "text": "⚠️ _This is an automated prediction for educational purposes. Not financial advice. Trade at your own risk._"
                             }
                         ]
                     }
@@ -331,26 +323,16 @@ def send_slack_notification(predictions_file, signals_file, report_url):
     
     # Send the notification
     try:
-        response = requests.post(webhook_url, json=payload, timeout=10)
+        response = requests.post(webhook_url, json=payload)
         response.raise_for_status()
-        print(f"✓ Slack notification sent successfully!")
-        print(f"  Signal: {signal}")
-        print(f"  Price: ${current_price:,.2f}")
-        print(f"  Confidence: {confidence}")
-        print(f"  Charts included: 3 images")
+        print("✓ Slack notification sent successfully")
     except requests.exceptions.RequestException as e:
         print(f"Error sending Slack notification: {e}")
-        if hasattr(e, 'response') and e.response is not None:
-            print(f"Response: {e.response.text}")
         sys.exit(1)
 
 if __name__ == "__main__":
     if len(sys.argv) != 4:
-        print("Usage: python send_slack_notification.py <predictions_file> <signals_file> <report_url>")
+        print("Usage: send_slack_notification.py <predictions_file> <signals_file> <report_url>")
         sys.exit(1)
     
-    predictions_file = sys.argv[1]
-    signals_file = sys.argv[2]
-    report_url = sys.argv[3]
-    
-    send_slack_notification(predictions_file, signals_file, report_url)
+    send_slack_notification(sys.argv[1], sys.argv[2], sys.argv[3])
