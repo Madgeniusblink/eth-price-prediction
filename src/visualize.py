@@ -212,10 +212,10 @@ def plot_4hour_prediction():
     plt.close()
 
 def main():
-    print("=== Creating Visualizations ===\n")
+    print("=== Creating Visualizations ===")
     
     plot_predictions_overview()
-    plot_technical_indicators()
+    # plot_technical_indicators()  # Temporarily disabled - needs technical indicators in data file
     plot_4hour_prediction()
     
     print("\n=== All Visualizations Created ===")
