@@ -306,8 +306,8 @@ Comprehensive analysis of all technical indicators.
         report += f"| {model.replace('_', ' ').title()} | {score:.4f} | {weight:.1f}% | {status} |\n"
     
     report += f"""
-**Ensemble R² Score:** {predictions.get('ensemble_r2', 'N/A')}  
-**Prediction Confidence:** {'High' if predictions['model_scores'].get('ml_features', 0) > 0.85 else 'Medium'}
+**Ensemble R² Score:** {predictions.get('ensemble_r2', 0):.4f}  
+**Prediction Confidence:** {'High' if predictions.get('ensemble_r2', 0) > 0.85 else 'Medium' if predictions.get('ensemble_r2', 0) > 0.70 else 'Low'}
 
 ---
 

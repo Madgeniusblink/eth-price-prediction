@@ -330,6 +330,10 @@ def main():
     # Save predictions
     last_timestamp = df_1m['timestamp'].iloc[-1]
     
+    # Calculate ensemble R² score (weighted average of model scores)
+    ensemble_r2 = sum(predictions_60m['scores'][k] * predictions_60m['weights'][k] 
+                      for k in ['linear', 'polynomial', 'ml_features'])
+    
     predictions_data = {
         'generated_at': datetime.now().isoformat(),
         'current_price': float(current_price),
@@ -337,6 +341,7 @@ def main():
         'trend_analysis': trend_analysis,
         'model_scores': {k: float(v) for k, v in predictions_60m['scores'].items()},
         'model_weights': {k: float(v) for k, v in predictions_60m['weights'].items()},
+        'ensemble_r2': float(ensemble_r2),
         'predictions': {
             '15m': {
                 'price': float(pred_15m),
