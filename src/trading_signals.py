@@ -5,6 +5,8 @@ Generates buy/sell/short signals with multi-timeframe trend analysis
 
 import pandas as pd
 import numpy as np
+import json
+import os
 from datetime import datetime, timedelta
 
 class TradingSignals:
