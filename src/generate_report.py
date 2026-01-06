@@ -66,6 +66,9 @@ def run_prediction_pipeline():
     # Use predict_rl.py instead of predict.py for adaptive weighting
     result = subprocess.run([sys.executable, os.path.join(src_dir, 'predict.py')], 
                           capture_output=True, text=True)
+    # Print subprocess output for debugging
+    if result.stdout:
+        print(result.stdout)
     if result.returncode != 0:
         print(f"✗ Error generating predictions: {result.stderr}")
         return False
