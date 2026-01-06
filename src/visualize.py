@@ -247,7 +247,7 @@ def plot_technical_indicators():
     print(f"✓ Saved: {os.path.join(BASE_DIR, 'eth_technical_indicators.png')}")
     plt.close()
 
-def plot_short_term_focus():
+def plot_4hour_prediction():
     """
     Focused view on next 1 hour prediction
     """
