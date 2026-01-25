@@ -1,7 +1,8 @@
 import os
+import sys
 #!/usr/bin/env python3
 """
-Ethereum Short-Term Price Prediction Model
+Ethereum Swing Trading Price Prediction Model (4-Hour Timeframe)
 Uses multiple approaches: Linear Regression, Polynomial Regression, and Technical Analysis
 """
 
@@ -69,7 +70,7 @@ def calculate_technical_indicators(df):
 def linear_trend_prediction(df, periods_ahead=12):
     """
     Simple linear regression on time series
-    For 1-minute data, 12 periods = 12 minutes
+    For 4-hour data, 12 periods = 48 hours (2 days)
     """
     # Use last 100 data points for training
     train_data = df.tail(100).copy()
@@ -251,87 +252,79 @@ def analyze_trend(df):
     }
 
 def main():
-    print("=== Ethereum Short-Term Price Prediction (RL-Enhanced) ===")
+    print("\n" + "="*70)
+    print("DEBUG: main() function started!")
+    print("DEBUG: This is the 4-HOUR timeframe version")
+    print("="*70 + "\n")
+    print("=== Ethereum Swing Trading Price Prediction (4-Hour Timeframe) ===")
     
-    # Load 1-minute data
-    df_1m = pd.read_csv(os.path.join(BASE_DIR, 'eth_1m_data.csv'))
-    df_1m['timestamp'] = pd.to_datetime(df_1m['timestamp'])
+    # Load 4-hour data
+    print("DEBUG: About to load eth_4h_data.csv...")
+    csv_path = os.path.join(BASE_DIR, 'eth_4h_data.csv')
+    print(f"DEBUG: CSV path = {csv_path}")
+    print(f"DEBUG: File exists? {os.path.exists(csv_path)}")
+    df_4h = pd.read_csv(csv_path)
+    print("DEBUG: CSV loaded successfully!")
+    df_4h['timestamp'] = pd.to_datetime(df_4h['timestamp'])
     
-    print(f"Loaded {len(df_1m)} 1-minute candles")
-    print(f"Time range: {df_1m['timestamp'].min()} to {df_1m['timestamp'].max()}")
-    print(f"Current price: ${df_1m['close'].iloc[-1]:.2f}\n")
+    print(f"Loaded {len(df_4h)} 4-hour candles")
+    print(f"Time range: {df_4h['timestamp'].min()} to {df_4h['timestamp'].max()}")
+    print(f"Current price: ${df_4h['close'].iloc[-1]:.2f}\n")
     
-    # Try to use RL-enhanced prediction
-    try:
-        from predict_rl import make_predictions_with_rl
-        
-        # Use RL-enhanced prediction system
-        rl_result = make_predictions_with_rl(df_1m, enable_rl=True)
-        
-        # Extract data in format compatible with rest of pipeline
-        trend_analysis = analyze_trend(df_1m)
-        predictions_60m = ensemble_prediction(df_1m, periods_ahead=60)
-        predictions_120m = ensemble_prediction(df_1m, periods_ahead=120)
-        
-        print("\n✓ Using RL-Enhanced Predictions")
-        if rl_result.get('market_condition'):
-            mc = rl_result['market_condition']
-            print(f"  Market: {mc['trend']} trend, {mc['volatility']} volatility")
-            print(f"  Confidence: {mc['confidence']:.0%}")
-        
-    except Exception as e:
-        print(f"\n⚠ RL system unavailable ({e}), using traditional method")
-        
-        # Fallback to traditional prediction
-        trend_analysis = analyze_trend(df_1m)
-        print("=== Current Market Analysis ===")
-        print(f"Trend: {trend_analysis['trend']}")
-        print(f"RSI: {trend_analysis['rsi']:.2f} ({trend_analysis['rsi_signal']})")
-        print(f"MACD Signal: {trend_analysis['macd_signal']}")
-        print(f"Bollinger Bands Position: {trend_analysis['bb_position']}")
-        print(f"Current Price: ${trend_analysis['current_price']:.2f}")
-        print(f"20-Period SMA: ${trend_analysis['sma_20']:.2f}")
-        print(f"BB Upper: ${trend_analysis['bb_upper']:.2f}")
-        print(f"BB Lower: ${trend_analysis['bb_lower']:.2f}\n")
-        
-        # Generate predictions for next 1-2 hours
-        print("=== Generating Predictions ===")
-        
-        # 1-hour prediction (60 minutes)
-        predictions_60m = ensemble_prediction(df_1m, periods_ahead=60)
-        
-        # 2-hour prediction (120 minutes)
-        predictions_120m = ensemble_prediction(df_1m, periods_ahead=120)
+    # Use traditional prediction method for 4-hour timeframe
+    # (RL system is optimized for minute-based predictions)
+    print("\n✓ Using Traditional Ensemble Method (4-Hour Timeframe)")
+    
+    # Traditional prediction
+    trend_analysis = analyze_trend(df_4h)
+    print("=== Current Market Analysis ===")
+    print(f"Trend: {trend_analysis['trend']}")
+    print(f"RSI: {trend_analysis['rsi']:.2f} ({trend_analysis['rsi_signal']})")
+    print(f"MACD Signal: {trend_analysis['macd_signal']}")
+    print(f"Bollinger Bands Position: {trend_analysis['bb_position']}")
+    print(f"Current Price: ${trend_analysis['current_price']:.2f}")
+    print(f"20-Period SMA: ${trend_analysis['sma_20']:.2f}")
+    print(f"BB Upper: ${trend_analysis['bb_upper']:.2f}")
+    print(f"BB Lower: ${trend_analysis['bb_lower']:.2f}\n")
+    
+    # Generate predictions for next 2-4 days
+    print("=== Generating Predictions ===")
+    
+    # 48-hour prediction (12 periods of 4h)
+    predictions_12p = ensemble_prediction(df_4h, periods_ahead=12)
+    
+    # 96-hour prediction (24 periods of 4h)
+    predictions_24p = ensemble_prediction(df_4h, periods_ahead=24)
     
     print("\nModel Performance Scores (R²):")
-    print(f"  Linear Regression: {predictions_60m['scores']['linear']:.4f}")
-    print(f"  Polynomial Regression: {predictions_60m['scores']['polynomial']:.4f}")
-    print(f"  ML Features: {predictions_60m['scores']['ml_features']:.4f}")
+    print(f"  Linear Regression: {predictions_12p['scores']['linear']:.4f}")
+    print(f"  Polynomial Regression: {predictions_12p['scores']['polynomial']:.4f}")
+    print(f"  ML Features: {predictions_12p['scores']['ml_features']:.4f}")
     
     print("\nEnsemble Weights:")
-    print(f"  Linear: {predictions_60m['weights']['linear']:.2%}")
-    print(f"  Polynomial: {predictions_60m['weights']['polynomial']:.2%}")
-    print(f"  ML Features: {predictions_60m['weights']['ml_features']:.2%}")
+    print(f"  Linear: {predictions_12p['weights']['linear']:.2%}")
+    print(f"  Polynomial: {predictions_12p['weights']['polynomial']:.2%}")
+    print(f"  ML Features: {predictions_12p['weights']['ml_features']:.2%}")
     
     # Key predictions
-    current_price = df_1m['close'].iloc[-1]
-    pred_15m = predictions_60m['ensemble'][14]  # 15 minutes
-    pred_30m = predictions_60m['ensemble'][29]  # 30 minutes
-    pred_60m = predictions_60m['ensemble'][59]  # 60 minutes
-    pred_120m = predictions_120m['ensemble'][119]  # 120 minutes
+    current_price = df_4h['close'].iloc[-1]
+    pred_4h = predictions_12p['ensemble'][0]  # 4 hours (1 period)
+    pred_8h = predictions_12p['ensemble'][1]  # 8 hours (2 periods)
+    pred_24h = predictions_12p['ensemble'][5]  # 24 hours (6 periods)
+    pred_48h = predictions_12p['ensemble'][11]  # 48 hours (12 periods)
     
     print("\n=== Price Predictions ===")
     print(f"Current Price: ${current_price:.2f}")
-    print(f"15-minute prediction: ${pred_15m:.2f} ({((pred_15m/current_price - 1) * 100):+.2f}%)")
-    print(f"30-minute prediction: ${pred_30m:.2f} ({((pred_30m/current_price - 1) * 100):+.2f}%)")
-    print(f"60-minute prediction: ${pred_60m:.2f} ({((pred_60m/current_price - 1) * 100):+.2f}%)")
-    print(f"120-minute prediction: ${pred_120m:.2f} ({((pred_120m/current_price - 1) * 100):+.2f}%)")
+    print(f"4-hour prediction: ${pred_4h:.2f} ({((pred_4h/current_price - 1) * 100):+.2f}%)")
+    print(f"8-hour prediction: ${pred_8h:.2f} ({((pred_8h/current_price - 1) * 100):+.2f}%)")
+    print(f"24-hour prediction: ${pred_24h:.2f} ({((pred_24h/current_price - 1) * 100):+.2f}%)")
+    print(f"48-hour prediction: ${pred_48h:.2f} ({((pred_48h/current_price - 1) * 100):+.2f}%)")
     
     # Save predictions
-    last_timestamp = df_1m['timestamp'].iloc[-1]
+    last_timestamp = df_4h['timestamp'].iloc[-1]
     
     # Calculate ensemble R² score (weighted average of model scores)
-    ensemble_r2 = sum(predictions_60m['scores'][k] * predictions_60m['weights'][k] 
+    ensemble_r2 = sum(predictions_12p['scores'][k] * predictions_12p['weights'][k] 
                       for k in ['linear', 'polynomial', 'ml_features'])
     
     predictions_data = {
@@ -339,63 +332,91 @@ def main():
         'current_price': float(current_price),
         'last_data_timestamp': last_timestamp.isoformat(),
         'trend_analysis': trend_analysis,
-        'model_scores': {k: float(v) for k, v in predictions_60m['scores'].items()},
-        'model_weights': {k: float(v) for k, v in predictions_60m['weights'].items()},
+        'model_scores': {k: float(v) for k, v in predictions_12p['scores'].items()},
+        'model_weights': {k: float(v) for k, v in predictions_12p['weights'].items()},
         'ensemble_r2': float(ensemble_r2),
         'predictions': {
-            '15m': {
-                'price': float(pred_15m),
-                'change_pct': float((pred_15m/current_price - 1) * 100),
-                'timestamp': (last_timestamp + timedelta(minutes=15)).isoformat()
+            '4h': {
+                'price': float(pred_4h),
+                'change_pct': float((pred_4h/current_price - 1) * 100),
+                'timestamp': (last_timestamp + timedelta(hours=4)).isoformat()
             },
-            '30m': {
-                'price': float(pred_30m),
-                'change_pct': float((pred_30m/current_price - 1) * 100),
-                'timestamp': (last_timestamp + timedelta(minutes=30)).isoformat()
+            '8h': {
+                'price': float(pred_8h),
+                'change_pct': float((pred_8h/current_price - 1) * 100),
+                'timestamp': (last_timestamp + timedelta(hours=8)).isoformat()
             },
-            '60m': {
-                'price': float(pred_60m),
-                'change_pct': float((pred_60m/current_price - 1) * 100),
-                'timestamp': (last_timestamp + timedelta(minutes=60)).isoformat()
+            '24h': {
+                'price': float(pred_24h),
+                'change_pct': float((pred_24h/current_price - 1) * 100),
+                'timestamp': (last_timestamp + timedelta(hours=24)).isoformat()
             },
-            '120m': {
-                'price': float(pred_120m),
-                'change_pct': float((pred_120m/current_price - 1) * 100),
-                'timestamp': (last_timestamp + timedelta(minutes=120)).isoformat()
+            '48h': {
+                'price': float(pred_48h),
+                'change_pct': float((pred_48h/current_price - 1) * 100),
+                'timestamp': (last_timestamp + timedelta(hours=48)).isoformat()
             }
         }
     }
     
     # Save detailed predictions for visualization
-    timestamps_60m = [last_timestamp + timedelta(minutes=i) for i in range(1, 61)]
-    timestamps_120m = [last_timestamp + timedelta(minutes=i) for i in range(1, 121)]
+    timestamps_12p = [last_timestamp + timedelta(hours=4*i) for i in range(1, 13)]
+    timestamps_24p = [last_timestamp + timedelta(hours=4*i) for i in range(1, 25)]
     
-    pred_df_60m = pd.DataFrame({
-        'timestamp': timestamps_60m,
-        'ensemble': predictions_60m['ensemble'],
-        'linear': predictions_60m['linear'],
-        'polynomial': predictions_60m['polynomial'],
-        'ml_features': predictions_60m['ml_features']
+    pred_df_12p = pd.DataFrame({
+        'timestamp': timestamps_12p,
+        'ensemble': predictions_12p['ensemble'],
+        'linear': predictions_12p['linear'],
+        'polynomial': predictions_12p['polynomial'],
+        'ml_features': predictions_12p['ml_features']
     })
     
-    pred_df_120m = pd.DataFrame({
-        'timestamp': timestamps_120m,
-        'ensemble': predictions_120m['ensemble'],
-        'linear': predictions_120m['linear'],
-        'polynomial': predictions_120m['polynomial'],
-        'ml_features': predictions_120m['ml_features']
+    pred_df_24p = pd.DataFrame({
+        'timestamp': timestamps_24p,
+        'ensemble': predictions_24p['ensemble'],
+        'linear': predictions_24p['linear'],
+        'polynomial': predictions_24p['polynomial'],
+        'ml_features': predictions_24p['ml_features']
     })
     
-    pred_df_60m.to_csv(os.path.join(BASE_DIR, 'predictions_60m.csv'), index=False)
-    pred_df_120m.to_csv(os.path.join(BASE_DIR, 'predictions_120m.csv'), index=False)
+    pred_df_12p.to_csv(os.path.join(BASE_DIR, 'predictions_48h.csv'), index=False)
+    pred_df_24p.to_csv(os.path.join(BASE_DIR, 'predictions_96h.csv'), index=False)
     
     with open(os.path.join(BASE_DIR, 'predictions_summary.json'), 'w') as f:
         json.dump(predictions_data, f, indent=2)
     
     print("\n=== Prediction Files Saved ===")
-    print(f"  {os.path.join(BASE_DIR, 'predictions_60m.csv')}")
-    print(f"  {os.path.join(BASE_DIR, 'predictions_120m.csv')}")
+    print(f"  Prediction keys: {list(predictions_data['predictions'].keys())}")
+    print(f"  4h prediction: ${predictions_data['predictions']['4h']['price']:.2f}")
+    print(f"  {os.path.join(BASE_DIR, 'predictions_48h.csv')}")
+    print(f"  {os.path.join(BASE_DIR, 'predictions_96h.csv')}")
     print(f"  {os.path.join(BASE_DIR, 'predictions_summary.json')}")
 
 if __name__ == '__main__':
-    main()
+    try:
+        main()
+        
+        # FAIL-SAFE: Verify the JSON file was created correctly
+        json_path = os.path.join(BASE_DIR, 'predictions_summary.json')
+        if not os.path.exists(json_path):
+            print(f"\n❌ CRITICAL ERROR: predictions_summary.json was not created at {json_path}")
+            sys.exit(1)
+        
+        with open(json_path, 'r') as f:
+            verify_data = json.load(f)
+        
+        if '4h' not in verify_data.get('predictions', {}):
+            print(f"\n❌ CRITICAL ERROR: predictions_summary.json does not contain '4h' key.")
+            print(f"Keys found: {list(verify_data.get('predictions', {}).keys())}")
+            sys.exit(1)
+        
+        print("\n✓ VERIFICATION PASSED: predictions_summary.json contains 4h/8h/24h/48h predictions")
+        
+    except Exception as e:
+        print(f"\n❌ FATAL ERROR in predict.py:")
+        print(f"Error type: {type(e).__name__}")
+        print(f"Error message: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        sys.exit(1)
+

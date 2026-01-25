@@ -66,6 +66,9 @@ def run_prediction_pipeline():
     # Use predict_rl.py instead of predict.py for adaptive weighting
     result = subprocess.run([sys.executable, os.path.join(src_dir, 'predict.py')], 
                           capture_output=True, text=True)
+    # Print subprocess output for debugging
+    if result.stdout:
+        print(result.stdout)
     if result.returncode != 0:
         print(f"✗ Error generating predictions: {result.stderr}")
         return False
@@ -100,7 +103,7 @@ def generate_trading_signals():
     """Generate trading signals from market data"""
     try:
         # Load market data
-        data_file = os.path.join(BASE_DIR, 'eth_1m_data.csv')
+        data_file = os.path.join(BASE_DIR, 'eth_4h_data.csv')
         if not os.path.exists(data_file):
             return None
         
@@ -141,10 +144,10 @@ def copy_outputs_to_report_folder(dated_dir, latest_dir, timestamp):
     files_to_copy = {
         'predictions_summary.json': 'prediction.json',
         'trading_signals.json': 'signals.json',
-        'eth_prediction_overview.png': 'overview.png',
-        'eth_1hour_prediction.png': '1hour.png',
+        'eth_predictions_overview.png': 'overview.png',
+        'eth_48hour_prediction.png': '48hour.png',
         'eth_technical_indicators.png': 'indicators.png',
-        'eth_1m_data.csv': 'data.csv'
+        'eth_4h_data.csv': 'data.csv'
     }
     
     copied_files = []
@@ -275,13 +278,13 @@ def generate_markdown_report(predictions, trading_signals, timestamp, copied_fil
 
 Complete view of historical data, predictions from all models, and ensemble forecast with confidence intervals.
 
-![Prediction Overview](eth_prediction_overview.png)
+![Prediction Overview](eth_predictions_overview.png)
 
-### 1-Hour Focused Prediction
+### 48-Hour Focused Prediction
 
-Detailed near-term view with trend lines and prediction paths.
+Detailed 2-day forecast view with trend lines and prediction paths for swing trading.
 
-![1-Hour Prediction](eth_1hour_prediction.png)
+![48-Hour Prediction](eth_48hour_prediction.png)
 
 ### Technical Indicators
 
