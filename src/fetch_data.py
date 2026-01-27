@@ -11,6 +11,10 @@ from datetime import datetime, timedelta
 import pandas as pd
 from config import BASE_DIR
 import sys
+from logger import setup_logger, log_error_with_context
+
+# Setup logger
+logger = setup_logger(__name__)
 
 def fetch_kraken_ohlc(pair='ETHUSD', interval=1, since=None):
     """
@@ -33,13 +37,16 @@ def fetch_kraken_ohlc(pair='ETHUSD', interval=1, since=None):
         params['since'] = since
     
     try:
+        logger.info(f"Fetching {interval}-minute OHLC data from Kraken...")
         print(f"Fetching {interval}-minute OHLC data from Kraken...")
         response = requests.get(url, params=params, timeout=15)
         response.raise_for_status()
         data = response.json()
         
         if data['error']:
-            print(f"✗ Kraken API error: {data['error']}")
+            error_msg = f"Kraken API error: {data['error']}"
+            logger.error(error_msg)
+            print(f"✗ {error_msg}")
             return None
         
         # Extract the pair data (key varies: XETHZUSD, ETHUSD, etc.)
@@ -71,6 +78,8 @@ def fetch_kraken_ohlc(pair='ETHUSD', interval=1, since=None):
         print(f"  Data age: {age_minutes:.1f} minutes")
         
         if age_minutes > 60:  # Data older than 1 hour is stale
+            logger.critical(f"Data is {age_minutes:.1f} minutes old (STALE!)")
+            logger.critical("Refusing to use stale data for predictions!")
             print(f"✗ CRITICAL: Data is {age_minutes:.1f} minutes old (STALE!)")
             print(f"✗ Refusing to use stale data for predictions!")
             return None
@@ -78,18 +87,76 @@ def fetch_kraken_ohlc(pair='ETHUSD', interval=1, since=None):
         return df
         
     except Exception as e:
+        log_error_with_context(logger, e, {'pair': pair, 'interval': interval})
         print(f"✗ Error fetching Kraken OHLC data: {e}")
-        import traceback
-        traceback.print_exc()
+        return None
+
+def fetch_coinbase_price():
+    """
+    Fetch current ETH price from Coinbase API
+    """
+    try:
+        url = 'https://api.coinbase.com/v2/prices/ETH-USD/spot'
+        response = requests.get(url, timeout=10)
+        response.raise_for_status()
+        data = response.json()
+        price = float(data['data']['amount'])
+        logger.info(f"Fetched price from Coinbase: ${price:,.2f}")
+        return price
+    except Exception as e:
+        logger.warning(f"Coinbase API failed: {e}")
+        return None
+
+def fetch_coingecko_price():
+    """
+    Fetch current ETH price from CoinGecko API
+    """
+    try:
+        url = 'https://api.coingecko.com/api/v3/simple/price'
+        params = {'ids': 'ethereum', 'vs_currencies': 'usd'}
+        response = requests.get(url, params=params, timeout=10)
+        response.raise_for_status()
+        data = response.json()
+        price = float(data['ethereum']['usd'])
+        logger.info(f"Fetched price from CoinGecko: ${price:,.2f}")
+        return price
+    except Exception as e:
+        logger.warning(f"CoinGecko API failed: {e}")
         return None
 
 def fetch_current_price():
     """
-    Fetch current Ethereum price from multiple sources
+    Fetch current Ethereum price from multiple sources with fallback
+    Tries Kraken -> Coinbase -> CoinGecko
     """
     prices = {}
+    sources = [
+        ('Kraken', lambda: fetch_kraken_spot_price()),
+        ('Coinbase', fetch_coinbase_price),
+        ('CoinGecko', fetch_coingecko_price)
+    ]
     
-    # Try Kraken first
+    # Try each source in order
+    for source_name, fetch_func in sources:
+        try:
+            price = fetch_func()
+            if price and price > 0:
+                prices[source_name] = price
+                logger.info(f"Successfully fetched price from {source_name}: ${price:,.2f}")
+                # Return first successful price
+                return price
+        except Exception as e:
+            logger.warning(f"{source_name} failed: {e}")
+            continue
+    
+    # If all sources failed, log critical error
+    logger.critical("All price sources failed!")
+    return None
+
+def fetch_kraken_spot_price():
+    """
+    Fetch current ETH spot price from Kraken
+    """
     try:
         url = 'https://api.kraken.com/0/public/Ticker'
         params = {'pair': 'ETHUSD'}
@@ -99,40 +166,12 @@ def fetch_current_price():
         
         if not data['error']:
             pair_key = list(data['result'].keys())[0]
-            prices['kraken'] = float(data['result'][pair_key]['c'][0])  # Last trade closed
+            price = float(data['result'][pair_key]['c'][0])  # Last trade closed
+            logger.info(f"Fetched price from Kraken: ${price:,.2f}")
+            return price
     except Exception as e:
-        print(f"⚠ Could not fetch from Kraken: {e}")
-    
-    # Try CoinGecko as backup
-    try:
-        url = 'https://api.coingecko.com/api/v3/simple/price'
-        params = {
-            'ids': 'ethereum',
-            'vs_currencies': 'usd',
-            'include_24hr_change': 'true'
-        }
-        response = requests.get(url, params=params, timeout=10)
-        response.raise_for_status()
-        data = response.json()
-        prices['coingecko'] = data['ethereum']['usd']
-        change_24h = data['ethereum'].get('usd_24h_change', 0)
-    except Exception as e:
-        print(f"⚠ Could not fetch from CoinGecko: {e}")
-    
-    if not prices:
-        print("✗ Could not fetch current price from any source!")
+        logger.warning(f"Kraken spot price failed: {e}")
         return None
-    
-    # Use average if multiple sources
-    avg_price = sum(prices.values()) / len(prices)
-    
-    print(f"✓ Current ETH price: ${avg_price:,.2f}")
-    if len(prices) > 1:
-        print(f"  Sources: {', '.join(f'{k}=${v:.2f}' for k, v in prices.items())}")
-    if 'coingecko' in locals():
-        print(f"  24h change: {change_24h:+.2f}%")
-    
-    return avg_price
 
 def main():
     """
@@ -192,6 +231,19 @@ def main():
         print(f"✓ Saved {len(df_15m)} candles to: {output_file_15m}")
     else:
         print("⚠ Could not fetch 15-minute data (non-critical)")
+    
+    print()
+    
+    # Fetch 4-hour data (last 500 candles = ~83 days)
+    print("Fetching 4-hour candle data...")
+    df_4h = fetch_kraken_ohlc(pair='ETHUSD', interval=240)  # 240 minutes = 4 hours
+    
+    if df_4h is not None and len(df_4h) >= 50:
+        output_file_4h = f"{BASE_DIR}/eth_4h_data.csv"
+        df_4h.to_csv(output_file_4h, index=False)
+        print(f"✓ Saved {len(df_4h)} candles to: {output_file_4h}")
+    else:
+        print("⚠ Could not fetch 4-hour data (non-critical)")
     
     print()
     print("=" * 80)

@@ -10,6 +10,7 @@ import shutil
 from datetime import datetime, timezone
 import json
 import pandas as pd
+import traceback
 
 # Add src directory to path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -17,6 +18,14 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from trading_signals import TradingSignals
 from glossary import GLOSSARY
 from config import BASE_DIR, DATA_DIR
+from logger import setup_logger, log_error_with_context
+from alert_system import alert_system
+from track_accuracy_enhanced import EnhancedAccuracyTracker
+from auto_retrain import AutoRetrainer
+from health_monitor import HealthMonitor
+
+# Setup logger
+logger = setup_logger(__name__)
 
 def create_report_folders():
     """Create folder structure for reports"""
@@ -44,7 +53,7 @@ def generate_report_filename(timestamp):
     return timestamp.strftime('%Y-%m-%d_%H-%M')
 
 def run_prediction_pipeline():
-    """Run the complete prediction pipeline"""
+    """Run the complete prediction pipeline with accuracy tracking"""
     print("=" * 70)
     print("  AUTOMATED ETHEREUM PRICE PREDICTION REPORT")
     print("=" * 70)
@@ -52,8 +61,60 @@ def run_prediction_pipeline():
     
     src_dir = os.path.dirname(os.path.abspath(__file__))
     
+    # Step 0: Validate past predictions (BEFORE fetching new data)
+    print("Step 0/5: Validating past predictions...")
+    try:
+        tracker = EnhancedAccuracyTracker()
+        
+        # Get current price for validation
+        import sys
+        sys.path.insert(0, src_dir)
+        from fetch_data import fetch_current_price
+        
+        current_price = fetch_current_price()
+        if current_price:
+            validated_count = tracker.validate_predictions(datetime.now(timezone.utc), current_price)
+            
+            if validated_count > 0:
+                print(f"✓ Validated {validated_count} past predictions")
+                logger.info(f"Validated {validated_count} past predictions")
+                
+                # Get recent performance metrics
+                summary = tracker.history.get('summary', {})
+                if summary:
+                    accuracy = summary.get('ensemble_avg_error_pct', 0)
+                    direction_acc = summary.get('directional_accuracy', 0)
+                    print(f"  Recent accuracy: {100-accuracy:.1f}% (Direction: {direction_acc:.1f}%)")
+                    logger.info(f"Recent accuracy: {100-accuracy:.1f}%, Direction: {direction_acc:.1f}%")
+                    
+                    # Alert if accuracy is degrading
+                    if direction_acc < 50:
+                        alert_system.send_warning_alert(
+                            f"Model directional accuracy is below 50%: {direction_acc:.1f}%"
+                        )
+                    
+                    # Check if retraining is needed
+                    try:
+                        retrainer = AutoRetrainer()
+                        retrain_check = retrainer.check_retraining_needed()
+                        
+                        if retrain_check['retrain_needed']:
+                            print("  ⚠ Retraining recommended - will execute after this run")
+                            logger.warning("Retraining recommended: " + "; ".join(retrain_check['reasons']))
+                    except Exception as e:
+                        logger.warning(f"Retraining check failed: {e}")
+            else:
+                print("✓ No predictions ready for validation yet")
+        else:
+            print("⚠ Could not fetch current price for validation")
+    except Exception as e:
+        logger.warning(f"Accuracy validation failed: {e}")
+        print(f"⚠ Warning: Could not validate past predictions: {e}")
+    
+    print()
+    
     # Step 1: Fetch Data
-    print("Step 1/4: Fetching latest market data...")
+    print("Step 1/5: Fetching latest market data...")
     result = subprocess.run([sys.executable, os.path.join(src_dir, 'fetch_data.py')], 
                           capture_output=True, text=True)
     if result.returncode != 0:
@@ -62,9 +123,9 @@ def run_prediction_pipeline():
     print("✓ Data fetched successfully\n")
     
     # Step 2: Generate Predictions (with Reinforcement Learning)
-    print("Step 2/4: Generating predictions with RL...")
-    # Use predict_rl.py instead of predict.py for adaptive weighting
-    result = subprocess.run([sys.executable, os.path.join(src_dir, 'predict.py')], 
+    print("Step 2/5: Generating predictions with RL...")
+    # Use predict_rl.py for adaptive weighting based on market conditions
+    result = subprocess.run([sys.executable, os.path.join(src_dir, 'predict_rl.py')], 
                           capture_output=True, text=True)
     # Print subprocess output for debugging
     if result.stdout:
@@ -75,7 +136,7 @@ def run_prediction_pipeline():
     print("✓ Predictions generated successfully (RL-enhanced)\n")
     
     # Step 3: Create Visualizations
-    print("Step 3/4: Creating visualizations...")
+    print("Step 3/5: Creating visualizations...")
     result = subprocess.run([sys.executable, os.path.join(src_dir, 'visualize.py')], 
                           capture_output=True, text=True)
     if result.returncode != 0:
@@ -84,7 +145,7 @@ def run_prediction_pipeline():
     print("✓ Visualizations created successfully\n")
     
     # Step 4: Generate Trading Signals
-    print("Step 4/4: Analyzing trading signals...")
+    print("Step 4/5: Analyzing trading signals...")
     try:
         signals_data = generate_trading_signals()
         if signals_data:
@@ -96,6 +157,56 @@ def run_prediction_pipeline():
             print("⚠ Trading signals could not be generated (insufficient data)\n")
     except Exception as e:
         print(f"⚠ Warning: Trading signals generation failed: {e}\n")
+    
+    # Step 5: Record predictions for future validation
+    print("Step 5/5: Recording predictions for future validation...")
+    try:
+        tracker = EnhancedAccuracyTracker()
+        
+        # Load predictions
+        pred_file = os.path.join(BASE_DIR, 'predictions_summary.json')
+        if os.path.exists(pred_file):
+            with open(pred_file, 'r') as f:
+                predictions = json.load(f)
+            
+            # Get current price
+            from fetch_data import fetch_current_price
+            current_price = fetch_current_price()
+            
+            if current_price:
+                # Detect market condition
+                try:
+                    from market_conditions import MarketConditionDetector
+                    detector = MarketConditionDetector()
+                    
+                    # Load 4h data for condition detection
+                    import pandas as pd
+                    df = pd.read_csv(os.path.join(BASE_DIR, 'eth_4h_data.csv'))
+                    condition = detector.detect(df)
+                    market_condition = condition.get('state', 'unknown')
+                except Exception as e:
+                    logger.warning(f"Could not detect market condition: {e}")
+                    market_condition = 'unknown'
+                
+                # Record prediction
+                prediction_id = tracker.record_prediction(
+                    datetime.now(timezone.utc),
+                    predictions['predictions'],
+                    current_price,
+                    market_condition=market_condition
+                )
+                
+                print(f"✓ Recorded prediction {prediction_id[:8]} for future validation")
+                logger.info(f"Recorded prediction for validation: {prediction_id}")
+            else:
+                print("⚠ Could not record prediction (no current price)")
+        else:
+            print("⚠ No predictions file found to record")
+    except Exception as e:
+        logger.warning(f"Failed to record prediction: {e}")
+        print(f"⚠ Warning: Could not record prediction: {e}")
+    
+    print()
     
     return True
 
@@ -561,16 +672,25 @@ Each report folder contains:
 def main():
     """Main report generation function"""
     try:
+        logger.info("="*70)
+        logger.info("Starting ETH Price Prediction Report Generation")
+        logger.info("="*70)
+        
         # Create folder structure
         dated_dir, latest_dir, timestamp = create_report_folders()
+        logger.info(f"Report folders created: {dated_dir}")
         print(f"Report folders created:")
         print(f"  Dated: {dated_dir}")
         print(f"  Latest: {latest_dir}\n")
         
         # Run prediction pipeline (including trading signals)
+        logger.info("Running prediction pipeline...")
         success = run_prediction_pipeline()
         
         if not success:
+            error_msg = "Report generation failed - prediction pipeline returned error"
+            logger.error(error_msg)
+            alert_system.send_critical_alert(error_msg)
             print("\n✗ Report generation failed")
             return 1
         
@@ -604,11 +724,55 @@ def main():
         print("  ✓ Model performance metrics")
         print("  ✓ Terminology guide")
         
+        logger.info("Report generation completed successfully")
+        
+        # Record successful run in health monitor
+        try:
+            health_monitor = HealthMonitor()
+            health_monitor.record_run_result(success=True)
+        except Exception as e:
+            logger.warning(f"Could not record health status: {e}")
+        
+        # Send success alert with predictions
+        try:
+            # Load predictions and signals for alert
+            pred_file = os.path.join(BASE_DIR, 'predictions_summary.json')
+            signal_file = os.path.join(BASE_DIR, 'trading_signals.json')
+            
+            if os.path.exists(pred_file) and os.path.exists(signal_file):
+                with open(pred_file, 'r') as f:
+                    predictions = json.load(f)
+                with open(signal_file, 'r') as f:
+                    signals = json.load(f)
+                
+                alert_system.send_prediction_alert(
+                    predictions['current_price'],
+                    predictions['predictions'],
+                    signals['trading_signal']
+                )
+        except Exception as e:
+            logger.warning(f"Could not send prediction alert: {e}")
+        
         return 0
         
     except Exception as e:
+        error_msg = f"Fatal error in report generation: {str(e)}"
+        logger.critical(error_msg)
+        log_error_with_context(logger, e, {'function': 'main'})
+        
+        alert_system.send_critical_alert(
+            error_msg,
+            {'error_type': type(e).__name__, 'traceback': traceback.format_exc()}
+        )
+        
+        # Record failed run in health monitor
+        try:
+            health_monitor = HealthMonitor()
+            health_monitor.record_run_result(success=False, error_msg=str(e))
+        except Exception as health_error:
+            logger.error(f"Could not record health status: {health_error}")
+        
         print(f"\n✗ Fatal error: {e}")
-        import traceback
         traceback.print_exc()
         return 1
 
