@@ -6,7 +6,7 @@ Compares past predictions with actual prices to measure model performance over t
 import os
 import json
 import pandas as pd
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import matplotlib.pyplot as plt
 import matplotlib
 from config import BASE_DIR
@@ -60,25 +60,39 @@ class AccuracyTracker:
         self.history['predictions'].append(record)
         self.save_history()
     
+    @staticmethod
+    def _ensure_utc_aware(dt):
+        """Ensure a datetime is timezone-aware (UTC)."""
+        if dt.tzinfo is None:
+            return dt.replace(tzinfo=timezone.utc)
+        return dt
+
     def validate_predictions(self, current_time, current_price):
         """
         Check past predictions and compare with actual prices
         
         Args:
-            current_time: Current datetime
+            current_time: Current datetime (naive or aware)
             current_price: Current actual price
         """
         validated_count = 0
+        
+        # Normalize current_time to UTC-aware
+        current_time = self._ensure_utc_aware(current_time)
         
         for pred_record in self.history['predictions']:
             if pred_record['validated']:
                 continue
             
-            pred_time = datetime.fromisoformat(pred_record['prediction_time'])
+            pred_time = self._ensure_utc_aware(
+                datetime.fromisoformat(pred_record['prediction_time'])
+            )
             
             # Check each prediction horizon
             for horizon, pred_data in pred_record['predictions'].items():
-                target_time = datetime.fromisoformat(pred_data['timestamp'])
+                target_time = self._ensure_utc_aware(
+                    datetime.fromisoformat(pred_data['timestamp'])
+                )
                 
                 # If we've reached or passed the target time, validate
                 if current_time >= target_time:

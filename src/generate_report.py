@@ -285,7 +285,7 @@ def copy_outputs_to_report_folder(dated_dir, latest_dir, timestamp):
         'predictions_summary.json': 'prediction.json',
         'trading_signals.json': 'signals.json',
         'eth_predictions_overview.png': 'overview.png',
-        'eth_48hour_prediction.png': '48hour.png',
+        'eth_2hour_prediction.png': '2hour.png',
         'eth_technical_indicators.png': 'indicators.png',
         'eth_4h_data.csv': 'data.csv'
     }
@@ -420,11 +420,11 @@ Complete view of historical data, predictions from all models, and ensemble fore
 
 ![Prediction Overview](eth_predictions_overview.png)
 
-### 48-Hour Focused Prediction
+### 2-Hour Focused Prediction
 
-Detailed 2-day forecast view with trend lines and prediction paths for swing trading.
+Detailed short-term forecast view with trend lines and prediction paths.
 
-![48-Hour Prediction](eth_48hour_prediction.png)
+![2-Hour Prediction](eth_2hour_prediction.png)
 
 ### Technical Indicators
 

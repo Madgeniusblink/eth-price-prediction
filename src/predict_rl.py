@@ -8,7 +8,7 @@ import numpy as np
 from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import PolynomialFeatures
 from sklearn.ensemble import RandomForestRegressor
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import json
 import warnings
 import os
@@ -276,7 +276,7 @@ def make_predictions_with_rl(df, enable_rl=True):
         print(f"    Confidence: {market_condition['confidence']:.0%}")
         
         # Validate past predictions
-        current_time = datetime.now()
+        current_time = datetime.now(timezone.utc)
         current_price = df['close'].iloc[-1]
         validated_count = accuracy_tracker.validate_predictions(current_time, current_price)
         
@@ -294,7 +294,7 @@ def make_predictions_with_rl(df, enable_rl=True):
     }
     
     predictions = {}
-    current_time = datetime.now()
+    current_time = datetime.now(timezone.utc)
     current_price = df['close'].iloc[-1]
     
     for horizon_name, minutes in horizons.items():
