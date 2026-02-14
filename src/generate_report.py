@@ -23,6 +23,7 @@ from alert_system import alert_system
 from track_accuracy_enhanced import EnhancedAccuracyTracker
 from auto_retrain import AutoRetrainer
 from health_monitor import HealthMonitor
+from market_filters import MarketFilters, apply_filters_to_signals
 
 # Setup logger
 logger = setup_logger(__name__)
@@ -236,11 +237,39 @@ def generate_trading_signals():
         levels = signals.find_support_resistance()
         entry_signals = signals.generate_entry_signals()
         
+        # Apply market filters for improved directional accuracy
+        try:
+            market_filters = MarketFilters()
+            current_price = df['close'].iloc[-1]
+            
+            # Get market context (trend + S/R levels)
+            market_context = market_filters.get_market_context(df, current_price)
+            
+            # Apply filters to trading signals
+            filtered_signals = apply_filters_to_signals(entry_signals, market_context)
+            
+            # Add filter information to response
+            filter_info = {
+                'trend': market_context['trend']['trend'],
+                'trend_strength': market_context['trend']['strength'],
+                'ma_200': market_context['trend']['ma_long'],
+                'near_sr': market_context['support_resistance']['near_sr'],
+                'sr_levels': market_context['sr_levels'][:5]  # Top 5 levels
+            }
+            
+            logger.info(f"Market filters applied: Trend={filter_info['trend']}, Near S/R={filter_info['near_sr']}")
+            
+        except Exception as e:
+            logger.error(f"Error applying market filters: {e}")
+            filtered_signals = entry_signals
+            filter_info = {'error': str(e)}
+        
         # Combine into single structure
         return {
             'trend_analysis': trend,
             'support_resistance': levels,
-            'trading_signal': entry_signals,
+            'trading_signal': filtered_signals,
+            'market_filters': filter_info,
             'generated_at': datetime.now(timezone.utc).isoformat()
         }
     
