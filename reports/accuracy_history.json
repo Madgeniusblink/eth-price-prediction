@@ -8254,6 +8254,40 @@
         }
       },
       "model_weights": {},
+      "validated": true
+    },
+    {
+      "id": "2026-02-15T00:14:55.436472+00:00",
+      "prediction_time": "2026-02-15T00:14:55.436472+00:00",
+      "current_price": 2082.97,
+      "market_condition": "unknown",
+      "predictions": {
+        "15m": {
+          "timestamp": "2026-01-05T20:47:00",
+          "ensemble_price": 3252.528421642528,
+          "models": {},
+          "weights": {}
+        },
+        "30m": {
+          "timestamp": "2026-01-05T21:02:00",
+          "ensemble_price": 3259.1251204145055,
+          "models": {},
+          "weights": {}
+        },
+        "60m": {
+          "timestamp": "2026-01-05T21:32:00",
+          "ensemble_price": 3275.129659661284,
+          "models": {},
+          "weights": {}
+        },
+        "120m": {
+          "timestamp": "2026-01-05T22:32:00",
+          "ensemble_price": 3318.3833049661307,
+          "models": {},
+          "weights": {}
+        }
+      },
+      "model_weights": {},
       "validated": false
     }
   ],
@@ -22957,16 +22991,80 @@
           "direction_correct": true
         }
       }
+    },
+    {
+      "prediction_id": "2026-02-14T20:03:41.202281+00:00",
+      "prediction_time": "2026-02-14T20:03:41.202281+00:00",
+      "validation_time": "2026-02-15T00:14:48.721719+00:00",
+      "target_time": "2026-01-05T20:47:00+00:00",
+      "horizon": "15m",
+      "actual_price": 2082.97,
+      "market_condition": "unknown",
+      "errors": {
+        "ensemble": {
+          "absolute": 1169.5584216425282,
+          "percentage": 56.148596554080385,
+          "direction_correct": false
+        }
+      }
+    },
+    {
+      "prediction_id": "2026-02-14T20:03:41.202281+00:00",
+      "prediction_time": "2026-02-14T20:03:41.202281+00:00",
+      "validation_time": "2026-02-15T00:14:48.721719+00:00",
+      "target_time": "2026-01-05T21:02:00+00:00",
+      "horizon": "30m",
+      "actual_price": 2082.97,
+      "market_condition": "unknown",
+      "errors": {
+        "ensemble": {
+          "absolute": 1176.1551204145057,
+          "percentage": 56.46529332705252,
+          "direction_correct": false
+        }
+      }
+    },
+    {
+      "prediction_id": "2026-02-14T20:03:41.202281+00:00",
+      "prediction_time": "2026-02-14T20:03:41.202281+00:00",
+      "validation_time": "2026-02-15T00:14:48.721719+00:00",
+      "target_time": "2026-01-05T21:32:00+00:00",
+      "horizon": "60m",
+      "actual_price": 2082.97,
+      "market_condition": "unknown",
+      "errors": {
+        "ensemble": {
+          "absolute": 1192.1596596612844,
+          "percentage": 57.23364521146653,
+          "direction_correct": false
+        }
+      }
+    },
+    {
+      "prediction_id": "2026-02-14T20:03:41.202281+00:00",
+      "prediction_time": "2026-02-14T20:03:41.202281+00:00",
+      "validation_time": "2026-02-15T00:14:48.721719+00:00",
+      "target_time": "2026-01-05T22:32:00+00:00",
+      "horizon": "120m",
+      "actual_price": 2082.97,
+      "market_condition": "unknown",
+      "errors": {
+        "ensemble": {
+          "absolute": 1235.413304966131,
+          "percentage": 59.31018233417337,
+          "direction_correct": false
+        }
+      }
     }
   ],
   "summary": {
-    "total_predictions": 119,
-    "total_validations": 480,
-    "ensemble_avg_error_pct": 2.5783757026364245,
+    "total_predictions": 120,
+    "total_validations": 484,
+    "ensemble_avg_error_pct": 3.03053317085177,
     "linear_avg_error_pct": 1.103793841120212,
     "polynomial_avg_error_pct": 1.8616625616998994,
     "random_forest_avg_error_pct": 0.9700363605786839,
-    "directional_accuracy": 46.666666666666664,
-    "last_updated": "2026-02-14T20:03:35.084240"
+    "directional_accuracy": 46.28099173553719,
+    "last_updated": "2026-02-15T00:14:48.723382"
   }
 }
