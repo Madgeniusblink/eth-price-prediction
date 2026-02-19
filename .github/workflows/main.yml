@@ -1,13 +1,13 @@
-name: Automated ETH Price Prediction Report
+name: ETH Weekly Prediction System
 
 on:
   schedule:
-    # Run every 4 hours at 00:00, 04:00, 08:00, 12:00, 16:00, 20:00 UTC
-    - cron: '0 0,4,8,12,16,20 * * *'
+    # Run every hour at minute 0
+    - cron: '0 * * * *'
   workflow_dispatch:  # Allow manual triggering
 
 jobs:
-  generate-report:
+  generate-prediction:
     runs-on: ubuntu-latest
     
     permissions:
@@ -15,7 +15,7 @@ jobs:
     
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       
     - name: Set up Python
       uses: actions/setup-python@v4
@@ -27,25 +27,25 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
         
-    - name: Generate prediction report
-      run: |
-        cd $GITHUB_WORKSPACE
-        python src/generate_report.py
-        
-    - name: Commit and push report
-      run: |
-        git config --local user.email "action@github.com"
-        git config --local user.name "GitHub Action"
-        git add reports/
-        git diff --staged --quiet || git commit -m "Automated report: $(date -u +'%Y-%m-%d %H:%M UTC')"
-        git push
-        
-    - name: Send Slack notification
+    - name: Generate ETH prediction
       env:
+        ALPHA_VANTAGE_API_KEY: ${{ secrets.ALPHA_VANTAGE_API_KEY }}
         SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
       run: |
         cd $GITHUB_WORKSPACE
-        python src/send_slack_notification.py \
-          "$GITHUB_WORKSPACE/predictions_summary.json" \
-          "$GITHUB_WORKSPACE/trading_signals.json" \
-          "https://github.com/${{ github.repository }}/tree/main/reports/latest"
+        python main.py
+        
+    - name: Archive prediction results
+      run: |
+        mkdir -p reports/$(date -u +'%Y/%m')
+        cp -f latest_prediction.json reports/$(date -u +'%Y/%m')/$(date -u +'%Y-%m-%d_%H-%M-UTC.json')
+        
+    - name: Commit results
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "ETH Prediction Bot"
+        git add reports/ latest_prediction.json
+        git diff --staged --quiet || git commit -m "ETH prediction update: $(date -u +'%Y-%m-%d %H:%M UTC')"
+        git push
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
