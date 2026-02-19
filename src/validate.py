@@ -1,3 +1,4 @@
+import os
 #!/usr/bin/env python3
 """
 Model Validation and Backtesting Module
@@ -10,6 +11,7 @@ from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 from datetime import datetime
 import json
 import warnings
+from config import BASE_DIR
 warnings.filterwarnings('ignore')
 
 def calculate_metrics(y_true, y_pred):
@@ -223,7 +225,7 @@ def main():
     
     # Load data
     try:
-        df = pd.read_csv('/home/ubuntu/eth_1m_data.csv')
+        df = pd.read_csv(os.path.join(BASE_DIR, 'eth_1m_data.csv'))
         df['timestamp'] = pd.to_datetime(df['timestamp'])
         print(f"✓ Loaded {len(df)} data points")
     except FileNotFoundError:
@@ -311,7 +313,7 @@ def main():
                    for k, v in trading_results.items()}
     }
     
-    output_path = '/home/ubuntu/validation_report.json'
+    output_path = os.path.join(BASE_DIR, 'validation_report.json')
     with open(output_path, 'w') as f:
         json.dump(validation_report, f, indent=2)
     
