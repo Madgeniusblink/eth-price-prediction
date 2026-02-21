@@ -31,10 +31,24 @@ def main():
         slack_webhook = os.environ.get('SLACK_WEBHOOK_URL')
         if slack_webhook:
             print("📱 Sending Slack notification...")
-            result = subprocess.run([
-                sys.executable, "src/send_slack_notification.py"
-            ], check=True, capture_output=True, text=True)
-            print("✅ Slack notification sent!")
+            
+            # Define the expected output files
+            predictions_file = "predictions_summary.json"
+            signals_file = "trading_signals.json"  
+            report_url = "https://github.com/Madgeniusblink/eth-price-prediction"
+            
+            # Check if the files exist
+            if os.path.exists(predictions_file) and os.path.exists(signals_file):
+                result = subprocess.run([
+                    sys.executable, "src/send_slack_notification.py",
+                    predictions_file, signals_file, report_url
+                ], check=True, capture_output=True, text=True)
+                print("✅ Slack notification sent!")
+                print(result.stdout)
+            else:
+                print("⚠️ Required files not found for Slack notification:")
+                print(f"  - {predictions_file}: {'✓' if os.path.exists(predictions_file) else '✗'}")
+                print(f"  - {signals_file}: {'✓' if os.path.exists(signals_file) else '✗'}")
         else:
             print("⚠️  SLACK_WEBHOOK_URL not configured - skipping Slack notification")
         
