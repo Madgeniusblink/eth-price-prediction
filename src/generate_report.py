@@ -264,6 +264,30 @@ def generate_trading_signals():
             filtered_signals = entry_signals
             filter_info = {'error': str(e)}
         
+        # Convert numpy types to native Python types for JSON serialization
+        def convert_numpy_types(obj):
+            """Recursively convert numpy types to native Python types"""
+            if isinstance(obj, dict):
+                return {k: convert_numpy_types(v) for k, v in obj.items()}
+            elif isinstance(obj, list):
+                return [convert_numpy_types(item) for item in obj]
+            elif isinstance(obj, np.integer):
+                return int(obj)
+            elif isinstance(obj, np.floating):
+                return float(obj)
+            elif isinstance(obj, np.bool_):
+                return bool(obj)
+            elif isinstance(obj, np.ndarray):
+                return obj.tolist()
+            else:
+                return obj
+        
+        # Apply conversion to all data structures
+        trend = convert_numpy_types(trend)
+        levels = convert_numpy_types(levels)
+        filtered_signals = convert_numpy_types(filtered_signals)
+        filter_info = convert_numpy_types(filter_info)
+        
         # Combine into single structure
         return {
             'trend_analysis': trend,
