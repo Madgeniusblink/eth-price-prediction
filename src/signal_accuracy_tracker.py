@@ -40,22 +40,24 @@ def fetch_historical_price(timestamp: str) -> Optional[float]:
         start_time = int(dt.timestamp() * 1000)
         end_time = start_time + 60000  # +1 minute window
 
-        url = "https://api.binance.com/api/v3/klines"
+        # Use Kraken (no geo-restrictions on GitHub Actions)
+        since_sec = int(dt.timestamp())
+        url = "https://api.kraken.com/0/public/OHLC"
         params = {
-            'symbol': 'ETHUSDT',
-            'interval': '1m',
-            'startTime': start_time,
-            'endTime': end_time,
-            'limit': 1
+            'pair': 'ETHUSD',
+            'interval': 1,
+            'since': since_sec,
         }
 
         response = requests.get(url, params=params, timeout=10)
         response.raise_for_status()
         data = response.json()
+        pair_key = [k for k in data["result"] if k != "last"][0]
+        rows = data["result"][pair_key]
 
-        if data and len(data) > 0:
-            # Kline format: [timestamp, open, high, low, close, ...]
-            return float(data[0][4])  # close price
+        if rows:
+            # Kraken OHLC: [time, open, high, low, close, vwap, volume, count]
+            return float(rows[0][4])  # close price
         return None
 
     except Exception as e:
