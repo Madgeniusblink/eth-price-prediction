@@ -100,6 +100,25 @@ class EnhancedAccuracyTracker:
         return prediction_id
     
     @staticmethod
+    def _fetch_price_at_time(self, target_time):
+        """Fetch ETH close price at a specific UTC datetime using Kraken OHLC (1m)."""
+        try:
+            import requests as _req
+            since_sec = int(target_time.timestamp())
+            url = "https://api.kraken.com/0/public/OHLC"
+            params = {"pair": "ETHUSD", "interval": 1, "since": since_sec}
+            r = _req.get(url, params=params, timeout=10)
+            r.raise_for_status()
+            data = r.json()
+            pair_key = [k for k in data["result"] if k != "last"][0]
+            rows = data["result"][pair_key]
+            if rows:
+                return float(rows[0][4])   # close price
+        except Exception as e:
+            logger.debug(f"Price fetch failed for {target_time}: {e}")
+        return None
+
+    @staticmethod
     def _ensure_utc_aware(dt):
         """Ensure a datetime is timezone-aware (UTC).
         
@@ -144,21 +163,33 @@ class EnhancedAccuracyTracker:
                 
                 # If we've reached or passed the target time, validate
                 if current_time >= target_time:
+                    # Fetch actual price at the target time (not current price)
+                    # This gives true accuracy vs just "where is price now"
+                    actual_price_at_target = self._fetch_price_at_time(target_time)
+                    if actual_price_at_target is None:
+                        # Fallback: only use current_price if target was very recent (<2h ago)
+                        age_hours = (current_time - target_time).total_seconds() / 3600
+                        if age_hours < 2:
+                            actual_price_at_target = current_price
+                        else:
+                            # Skip — can't validate without actual price
+                            continue
+
                     # Calculate ensemble error
                     ensemble_price = pred_data['ensemble_price']
-                    ensemble_error = abs(ensemble_price - current_price)
-                    ensemble_error_pct = (ensemble_error / current_price) * 100
+                    ensemble_error = abs(ensemble_price - actual_price_at_target)
+                    ensemble_error_pct = (ensemble_error / actual_price_at_target) * 100
                     
-                    # Check directional accuracy
+                    # Check directional accuracy against actual price at target time
                     predicted_direction = 'up' if ensemble_price > pred_record['current_price'] else 'down'
-                    actual_direction = 'up' if current_price > pred_record['current_price'] else 'down'
+                    actual_direction = 'up' if actual_price_at_target > pred_record['current_price'] else 'down'
                     direction_correct = predicted_direction == actual_direction
                     
-                    # Calculate per-model errors
+                    # Calculate per-model errors vs actual price at target time
                     model_errors = {}
                     for model_name, model_price in pred_data.get('models', {}).items():
-                        error = abs(model_price - current_price)
-                        error_pct = (error / current_price) * 100
+                        error = abs(model_price - actual_price_at_target)
+                        error_pct = (error / actual_price_at_target) * 100
                         model_direction = 'up' if model_price > pred_record['current_price'] else 'down'
                         model_direction_correct = model_direction == actual_direction
                         
@@ -175,7 +206,7 @@ class EnhancedAccuracyTracker:
                         'validation_time': current_time.isoformat(),
                         'target_time': target_time.isoformat(),
                         'horizon': horizon,
-                        'actual_price': current_price,
+                        'actual_price': actual_price_at_target,
                         'market_condition': pred_record.get('market_condition', 'unknown'),
                         'errors': {
                             'ensemble': {

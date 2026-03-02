@@ -89,11 +89,29 @@ def run_prediction_pipeline():
                     print(f"  Recent accuracy: {100-accuracy:.1f}% (Direction: {direction_acc:.1f}%)")
                     logger.info(f"Recent accuracy: {100-accuracy:.1f}%, Direction: {direction_acc:.1f}%")
                     
-                    # Alert if accuracy is degrading
-                    if direction_acc < 50:
-                        alert_system.send_warning_alert(
-                            f"Model directional accuracy is below 50%: {direction_acc:.1f}%"
-                        )
+                    # Alert if accuracy is degrading — throttled to once per 24h
+                    # Requires minimum 30 samples before alerting (avoid false alarms on warmup)
+                    total_preds = summary.get('total_predictions', 0)
+                    if direction_acc < 50 and total_preds >= 30:
+                        alert_flag_file = os.path.join(BASE_DIR, 'data', '.accuracy_alert_sent')
+                        import time as _time
+                        now_ts = _time.time()
+                        last_sent = 0
+                        if os.path.exists(alert_flag_file):
+                            try:
+                                last_sent = float(open(alert_flag_file).read().strip())
+                            except Exception:
+                                pass
+                        if now_ts - last_sent > 86400:   # 24h throttle
+                            alert_system.send_warning_alert(
+                                f"Model directional accuracy is below 50%: {direction_acc:.1f}% "
+                                f"over {total_preds} predictions. Consider retraining."
+                            )
+                            try:
+                                os.makedirs(os.path.dirname(alert_flag_file), exist_ok=True)
+                                open(alert_flag_file, 'w').write(str(now_ts))
+                            except Exception:
+                                pass
                     
                     # Check if retraining is needed
                     try:

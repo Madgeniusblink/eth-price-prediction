@@ -1,340 +1,218 @@
 #!/usr/bin/env python3
 """
-Send formatted Slack notifications with ETH price predictions and charts.
-Clean, professional design without emojis, includes chart images.
+Send formatted Slack notification with ETH predictions, signal, and derivatives context.
+Single clean message — no duplicate alerts.
 """
 
 import os
 import sys
 import json
 import requests
-from datetime import datetime
+from datetime import datetime, timezone
+
+
+SIGNAL_EMOJI = {
+    'BUY':   '🟢',
+    'SELL':  '🔴',
+    'SHORT': '🟠',
+    'WAIT':  '⏸️',
+    'HOLD':  '⏸️',
+}
+
+SIGNAL_COLOR = {
+    'BUY':   '#2ecc71',
+    'SELL':  '#e74c3c',
+    'SHORT': '#e67e22',
+    'WAIT':  '#95a5a6',
+    'HOLD':  '#95a5a6',
+}
+
 
 def send_slack_notification(predictions_file, signals_file, report_url):
-    """Send a clean, professional Slack notification with predictions and charts."""
-    
     webhook_url = os.environ.get('SLACK_WEBHOOK_URL')
     if not webhook_url:
-        print("Error: SLACK_WEBHOOK_URL environment variable not set")
+        print("Error: SLACK_WEBHOOK_URL not set")
         sys.exit(1)
-    
-    # Load prediction and signal data
+
     try:
-        with open(predictions_file, 'r') as f:
+        with open(predictions_file) as f:
             predictions = json.load(f)
-        with open(signals_file, 'r') as f:
+        with open(signals_file) as f:
             signals = json.load(f)
-    except FileNotFoundError as e:
-        print(f"Error: Could not find required file: {e}")
+    except (FileNotFoundError, json.JSONDecodeError) as e:
+        print(f"Error loading data files: {e}")
         sys.exit(1)
-    except json.JSONDecodeError as e:
-        print(f"Error: Invalid JSON in file: {e}")
-        sys.exit(1)
-    
-    # Extract data with safe fallbacks
-    # Current prediction engine uses 15m/30m/60m/120m timeframes
+
+    # ── Core data ───────────────────────────────────────────────────────────
     current_price = predictions.get('current_price', 0)
-    preds = predictions.get('predictions', {})
-    pred_15m = preds.get('15m', preds.get('15min', {}))
-    pred_30m = preds.get('30m', preds.get('30min', {}))
-    pred_60m = preds.get('60m', preds.get('60min', {}))
-    pred_120m = preds.get('120m', preds.get('120min', {}))
-    
-    # Extract trading signal data from correct structure
-    trading_signal = signals.get('trading_signal', {})
-    signal = trading_signal.get('signal', 'HOLD')
-    action = trading_signal.get('action', 'Monitor position')
-    confidence = trading_signal.get('confidence', 'MEDIUM')
-    entry = trading_signal.get('entry', current_price)
-    stop_loss = trading_signal.get('stop_loss', 0)
-    target = trading_signal.get('target', 0)
-    risk_reward = trading_signal.get('risk_reward', 0)
-    
-    # Extract trend analysis
-    trend_analysis = signals.get('trend_analysis', {})
-    trend = trend_analysis.get('trend', 'NEUTRAL')
-    rsi_value = trend_analysis.get('rsi', 0)
-    macd_status = trend_analysis.get('macd_signal', 'NEUTRAL').upper()
-    
-    # Extract support/resistance
-    support_resistance = signals.get('support_resistance', {})
-    support = support_resistance.get('nearest_support', 0)
-    resistance = support_resistance.get('nearest_resistance', 0)
-    
-    # Calculate position size (2% risk rule)
-    if stop_loss > 0:
-        risk_per_coin = abs(entry - stop_loss)
-        account_size = 10000  # Default account size
-        risk_amount = account_size * 0.02
-        position_size = f"${risk_amount / risk_per_coin:,.2f}"
-    else:
-        position_size = "Calculate based on your risk tolerance"
-    
-    # Calculate volume trend and volatility from recent price action
-    volume_trend = "INCREASING" if trend == "BULL MARKET" else "DECREASING" if trend == "BEAR MARKET" else "STABLE"
-    change_120m = abs(pred_120m.get('change_pct', pred_120m.get('change_percent', 0)))
-    volatility_level = "HIGH" if change_120m > 5 else "MEDIUM" if change_120m > 2 else "LOW"
-    
-    timestamp = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC')
-    
-    # Determine signal color
-    signal_colors = {
-        'BUY': '#2ecc71',    # Green
-        'SELL': '#e74c3c',   # Red
-        'SHORT': '#e67e22',  # Orange
-        'HOLD': '#95a5a6'    # Gray
-    }
-    color = signal_colors.get(signal, '#95a5a6')
-    
-    # GitHub raw URLs for chart images
-    repo_url = "https://raw.githubusercontent.com/Madgeniusblink/eth-price-prediction/main/reports/latest"
-    overview_img = f"{repo_url}/eth_predictions_overview.png"
-    hour_img = f"{repo_url}/eth_2hour_prediction.png"
-    indicators_img = f"{repo_url}/eth_technical_indicators.png"
-    
-    # Build the message payload
-    payload = {
-        "text": f"ETH Price Prediction Report - {timestamp}",
-        "attachments": [
-            {
-                "color": color,
-                "blocks": [
-                    {
-                        "type": "header",
-                        "text": {
-                            "type": "plain_text",
-                            "text": "ETH Price Prediction Report"
-                        }
-                    },
-                    {
-                        "type": "section",
-                        "fields": [
-                            {
-                                "type": "mrkdwn",
-                                "text": f"*Generated:*\n{timestamp}"
-                            },
-                            {
-                                "type": "mrkdwn",
-                                "text": f"*Current Price:*\n${current_price:,.2f}"
-                            }
-                        ]
-                    },
-                    {
-                        "type": "divider"
-                    },
-                    {
-                        "type": "section",
-                        "text": {
-                            "type": "mrkdwn",
-                            "text": f"*TRADING SIGNAL: {signal}*"
-                        }
-                    },
-                    {
-                        "type": "section",
-                        "fields": [
-                            {
-                                "type": "mrkdwn",
-                                "text": f"*Action:*\n{action}"
-                            },
-                            {
-                                "type": "mrkdwn",
-                                "text": f"*Confidence:*\n{confidence}"
-                            },
-                            {
-                                "type": "mrkdwn",
-                                "text": f"*Market Trend:*\n{trend}"
-                            },
-                            {
-                                "type": "mrkdwn",
-                                "text": f"*Risk/Reward:*\n{risk_reward:.2f}:1" if risk_reward > 0 else "*Risk/Reward:*\nCalculate based on entry/exit"
-                            }
-                        ]
-                    },
-                    {
-                        "type": "divider"
-                    },
-                    {
-                        "type": "section",
-                        "text": {
-                            "type": "mrkdwn",
-                            "text": "*PRICE PREDICTIONS*"
-                        }
-                    },
-                    {
-                        "type": "section",
-                        "fields": [
-                            {
-                                "type": "mrkdwn",
-                                "text": f"*15 min:*\n${pred_15m.get('price', 0):,.2f} ({pred_15m.get('change_pct', pred_15m.get('change_percent', 0)):+.2f}%)"
-                            },
-                            {
-                                "type": "mrkdwn",
-                                "text": f"*30 min:*\n${pred_30m.get('price', 0):,.2f} ({pred_30m.get('change_pct', pred_30m.get('change_percent', 0)):+.2f}%)"
-                            },
-                            {
-                                "type": "mrkdwn",
-                                "text": f"*60 min:*\n${pred_60m.get('price', 0):,.2f} ({pred_60m.get('change_pct', pred_60m.get('change_percent', 0)):+.2f}%)"
-                            },
-                            {
-                                "type": "mrkdwn",
-                                "text": f"*120 min:*\n${pred_120m.get('price', 0):,.2f} ({pred_120m.get('change_pct', pred_120m.get('change_percent', 0)):+.2f}%)"
-                            }
-                        ]
-                    },
-                    {
-                        "type": "divider"
-                    },
-                    {
-                        "type": "section",
-                        "text": {
-                            "type": "mrkdwn",
-                            "text": "*TECHNICAL INDICATORS*"
-                        }
-                    },
-                    {
-                        "type": "section",
-                        "fields": [
-                            {
-                                "type": "mrkdwn",
-                                "text": f"*RSI (14):*\n{rsi_value:.2f}"
-                            },
-                            {
-                                "type": "mrkdwn",
-                                "text": f"*MACD:*\n{macd_status}"
-                            },
-                            {
-                                "type": "mrkdwn",
-                                "text": f"*Support:*\n${support:,.2f}"
-                            },
-                            {
-                                "type": "mrkdwn",
-                                "text": f"*Resistance:*\n${resistance:,.2f}"
-                            }
-                        ]
-                    },
-                    {
-                        "type": "divider"
-                    },
-                    {
-                        "type": "section",
-                        "text": {
-                            "type": "mrkdwn",
-                            "text": "*TRADE SETUP*"
-                        }
-                    },
-                    {
-                        "type": "section",
-                        "fields": [
-                            {
-                                "type": "mrkdwn",
-                                "text": f"*Entry Price:*\n${entry:,.2f}"
-                            },
-                            {
-                                "type": "mrkdwn",
-                                "text": f"*Stop Loss:*\n${stop_loss:,.2f}"
-                            },
-                            {
-                                "type": "mrkdwn",
-                                "text": f"*Target Price:*\n${target:,.2f}"
-                            },
-                            {
-                                "type": "mrkdwn",
-                                "text": f"*Position Size:*\n{position_size}"
-                            }
-                        ]
-                    },
-                    {
-                        "type": "divider"
-                    },
-                    {
-                        "type": "section",
-                        "text": {
-                            "type": "mrkdwn",
-                            "text": "*MARKET ANALYSIS*"
-                        }
-                    },
-                    {
-                        "type": "section",
-                        "fields": [
-                            {
-                                "type": "mrkdwn",
-                                "text": f"*Volume Trend:*\n{volume_trend}"
-                            },
-                            {
-                                "type": "mrkdwn",
-                                "text": f"*Volatility:*\n{volatility_level}"
-                            },
-                            {
-                                "type": "mrkdwn",
-                                "text": f"*Trend Strength:*\n{confidence}"
-                            },
-                            {
-                                "type": "mrkdwn",
-                                "text": f"*Market Phase:*\n{trend}"
-                            }
-                        ]
-                    },
-                    {
-                        "type": "divider"
-                    },
-                    {
-                        "type": "section",
-                        "text": {
-                            "type": "mrkdwn",
-                            "text": "*PREDICTION CHARTS*"
-                        }
-                    },
-                    {
-                        "type": "image",
-                        "image_url": overview_img,
-                        "alt_text": "Prediction Overview Chart"
-                    },
-                    {
-                        "type": "image",
-                        "image_url": hour_img,
-                        "alt_text": "2-Hour Prediction Chart"
-                    },
-                    {
-                        "type": "image",
-                        "image_url": indicators_img,
-                        "alt_text": "Technical Indicators Chart"
-                    },
-                    {
-                        "type": "divider"
-                    },
-                    {
-                        "type": "section",
-                        "text": {
-                            "type": "mrkdwn",
-                            "text": f"<{report_url}|View Full Report on GitHub>"
-                        }
-                    },
-                    {
-                        "type": "context",
-                        "elements": [
-                            {
-                                "type": "mrkdwn",
-                                "text": "⚠️ _This is an automated prediction for educational purposes. Not financial advice. Trade at your own risk._"
-                            }
-                        ]
-                    }
-                ]
-            }
-        ]
-    }
-    
-    # Send the notification
+    preds         = predictions.get('predictions', {})
+    p15  = preds.get('15m',  preds.get('15min',  {}))
+    p30  = preds.get('30m',  preds.get('30min',  {}))
+    p60  = preds.get('60m',  preds.get('60min',  {}))
+    p120 = preds.get('120m', preds.get('120min', {}))
+
+    trading   = signals.get('trading_signal', {})
+    trend_a   = signals.get('trend_analysis', {})
+    sr        = signals.get('support_resistance', {})
+    deriv     = signals.get('derivatives_context', {})
+    mkt_filt  = signals.get('market_filters', {})
+
+    signal     = trading.get('signal', 'WAIT')
+    action     = trading.get('action', 'Monitor position')
+    confidence = trading.get('confidence', 'MEDIUM')
+    entry      = trading.get('entry', current_price)
+    stop_loss  = trading.get('stop_loss', 0)
+    target     = trading.get('target', 0)
+    rr         = trading.get('risk_reward', 0)
+    reasoning  = trading.get('reasoning', '')
+
+    trend      = trend_a.get('trend', 'NEUTRAL')
+    rsi_val    = trend_a.get('rsi', 0)
+    macd_str   = str(trend_a.get('macd_signal', 'neutral')).upper()
+    support    = sr.get('nearest_support', 0)
+    resistance = sr.get('nearest_resistance', 0)
+
+    # ── Derivatives context ─────────────────────────────────────────────────
+    funding_rate = deriv.get('funding_rate')
+    fg_value     = deriv.get('fear_greed_index')
+    fg_label     = deriv.get('fear_greed_classification', '')
+    lsr          = deriv.get('long_short_ratio')
+    oi           = deriv.get('open_interest')
+
+    funding_str = f"{funding_rate*100:.4f}%" if funding_rate is not None else "N/A"
+    fg_str      = f"{fg_value} ({fg_label})" if fg_value is not None else "N/A"
+    lsr_str     = f"{lsr:.2f}" if lsr is not None else "N/A"
+    oi_str      = f"${oi/1e9:.2f}B" if oi is not None else "N/A"
+
+    # ── Load accuracy stats if available ────────────────────────────────────
+    acc_str = "Building… (<30 validated)"
     try:
-        response = requests.post(webhook_url, json=payload)
-        response.raise_for_status()
+        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        acc_file = os.path.join(base_dir, 'data', 'accuracy_stats.json')
+        if os.path.exists(acc_file):
+            with open(acc_file) as f:
+                acc = json.load(f)
+            wr1 = acc.get('win_rate_1h')
+            wr2 = acc.get('win_rate_2h')
+            total = acc.get('total_signals', 0)
+            if wr1 is not None:
+                acc_str = f"1h: {wr1:.0f}% | 2h: {wr2:.0f}% ({total} signals)"
+    except Exception:
+        pass
+
+    # ── Format ──────────────────────────────────────────────────────────────
+    sig_emoji = SIGNAL_EMOJI.get(signal, '⏸️')
+    color     = SIGNAL_COLOR.get(signal, '#95a5a6')
+    timestamp = datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')
+
+    # Prediction line
+    def fmt_pred(p):
+        price  = p.get('price', 0)
+        chg    = p.get('change_pct', p.get('change_percent', 0))
+        arrow  = '▲' if chg >= 0 else '▼'
+        return f"${price:,.2f} ({arrow}{abs(chg):.2f}%)"
+
+    rr_display = f"{rr:.2f}:1" if rr and rr > 0 else "—"
+
+    # Trade setup line (only show if actionable signal)
+    trade_setup = ""
+    if signal in ('BUY', 'SHORT', 'SELL') and entry and stop_loss and target:
+        trade_setup = (
+            f"*Entry:* ${entry:,.2f}  |  *Stop:* ${stop_loss:,.2f}  "
+            f"|  *Target:* ${target:,.2f}  |  *R:R:* {rr_display}"
+        )
+
+    blocks = [
+        {
+            "type": "header",
+            "text": {"type": "plain_text", "text": f"ETH Prediction · {timestamp}"}
+        },
+        {
+            "type": "section",
+            "fields": [
+                {"type": "mrkdwn", "text": f"*Price*\n${current_price:,.2f}"},
+                {"type": "mrkdwn", "text": f"*Trend*\n{trend}"},
+                {"type": "mrkdwn", "text": f"*Signal*\n{sig_emoji} {signal} ({confidence})"},
+                {"type": "mrkdwn", "text": f"*Action*\n{action}"},
+            ]
+        },
+        {"type": "divider"},
+        {
+            "type": "section",
+            "text": {"type": "mrkdwn", "text": "*Price Targets*"},
+            "fields": [
+                {"type": "mrkdwn", "text": f"*15m*\n{fmt_pred(p15)}"},
+                {"type": "mrkdwn", "text": f"*30m*\n{fmt_pred(p30)}"},
+                {"type": "mrkdwn", "text": f"*1h*\n{fmt_pred(p60)}"},
+                {"type": "mrkdwn", "text": f"*2h*\n{fmt_pred(p120)}"},
+            ]
+        },
+    ]
+
+    # Trade setup block (only if actionable)
+    if trade_setup:
+        blocks.append({
+            "type": "section",
+            "text": {"type": "mrkdwn", "text": f"*Trade Setup*\n{trade_setup}"}
+        })
+
+    blocks += [
+        {"type": "divider"},
+        {
+            "type": "section",
+            "text": {"type": "mrkdwn", "text": "*Technical & Derivatives*"},
+            "fields": [
+                {"type": "mrkdwn", "text": f"*RSI*\n{rsi_val:.1f}"},
+                {"type": "mrkdwn", "text": f"*MACD*\n{macd_str}"},
+                {"type": "mrkdwn", "text": f"*Support*\n${support:,.2f}"},
+                {"type": "mrkdwn", "text": f"*Resistance*\n${resistance:,.2f}"},
+                {"type": "mrkdwn", "text": f"*Funding Rate*\n{funding_str}"},
+                {"type": "mrkdwn", "text": f"*Fear & Greed*\n{fg_str}"},
+                {"type": "mrkdwn", "text": f"*L/S Ratio*\n{lsr_str}"},
+                {"type": "mrkdwn", "text": f"*Open Interest*\n{oi_str}"},
+            ]
+        },
+        {"type": "divider"},
+        {
+            "type": "section",
+            "fields": [
+                {"type": "mrkdwn", "text": f"*Signal Win Rate*\n{acc_str}"},
+                {"type": "mrkdwn", "text": f"*<{report_url}|View Report>*\nGitHub"},
+            ]
+        },
+        {
+            "type": "context",
+            "elements": [
+                {"type": "mrkdwn",
+                 "text": "⚠️ _Analysis only — not financial advice. Trade at your own risk._"}
+            ]
+        },
+    ]
+
+    # Charts
+    repo_raw = "https://raw.githubusercontent.com/Madgeniusblink/eth-price-prediction/main/reports/latest"
+    for img_url, alt in [
+        (f"{repo_raw}/eth_predictions_overview.png", "Overview"),
+        (f"{repo_raw}/eth_2hour_prediction.png",     "2h Prediction"),
+    ]:
+        blocks.append({"type": "image", "image_url": img_url, "alt_text": alt})
+
+    payload = {
+        "text": f"ETH {sig_emoji} {signal} @ ${current_price:,.2f} | {trend} | {timestamp}",
+        "attachments": [{"color": color, "blocks": blocks}]
+    }
+
+    try:
+        r = requests.post(webhook_url, json=payload, timeout=10)
+        r.raise_for_status()
         print("✓ Slack notification sent successfully")
-    except requests.exceptions.RequestException as e:
+    except requests.RequestException as e:
         print(f"Error sending Slack notification: {e}")
         sys.exit(1)
+
 
 if __name__ == "__main__":
     if len(sys.argv) != 4:
         print("Usage: send_slack_notification.py <predictions_file> <signals_file> <report_url>")
         sys.exit(1)
-    
     send_slack_notification(sys.argv[1], sys.argv[2], sys.argv[3])
