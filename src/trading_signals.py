@@ -1,6 +1,7 @@
 """
 Trading Signals Module
 Generates buy/sell/short signals with multi-timeframe trend analysis
+Includes derivatives data integration and advanced filters
 """
 
 import pandas as pd
@@ -8,6 +9,10 @@ import numpy as np
 import json
 import os
 from datetime import datetime, timedelta
+try:
+    from derivatives_data import fetch_derivatives_data
+except ImportError:
+    from src.derivatives_data import fetch_derivatives_data
 
 class TradingSignals:
     """Generate trading signals based on technical indicators and trend analysis"""
@@ -209,17 +214,21 @@ class TradingSignals:
     def generate_entry_signals(self):
         """
         Generate buy/sell/short entry signals with user context awareness
-        
+        Integrates derivatives data and advanced filters
+
         Returns:
             dict with signal information
         """
         # Load user context
         user_context = self._load_user_context()
-        
+
+        # Fetch derivatives data
+        derivatives_data = fetch_derivatives_data()
+
         latest = self.df.iloc[-1]
         trend = self.detect_trend()
         levels = self.find_support_resistance()
-        
+
         # Calculate signal scores
         buy_score = 0
         sell_score = 0
@@ -275,6 +284,25 @@ class TradingSignals:
                 sell_score += 1
             elif short_score > buy_score:
                 short_score += 1
+
+        # Apply derivatives data filters
+        funding_rate = derivatives_data.get('funding_rate')
+        fear_greed = derivatives_data.get('fear_greed_index')
+
+        # Funding rate filter
+        if funding_rate is not None:
+            if funding_rate > 0.0001:  # Positive funding (longs pay shorts)
+                buy_score -= 2  # Reduce bullish bias
+            elif funding_rate < -0.0001:  # Negative funding (shorts pay longs)
+                short_score -= 2  # Reduce bearish bias
+
+        # Fear & Greed filter
+        if fear_greed is not None:
+            if fear_greed < 20:  # Extreme Fear
+                buy_score += 1  # Contrarian buy opportunity
+            elif fear_greed > 80:  # Extreme Greed
+                sell_score += 1  # Contrarian sell/short opportunity
+                short_score += 1
         
         # Determine primary signal
         max_score = max(buy_score, sell_score, short_score)
@@ -298,10 +326,20 @@ class TradingSignals:
         
         # Calculate entry, stop loss, and target
         entry_levels = self._calculate_entry_levels(signal, latest, levels, trend)
-        
+
+        # Apply Risk:Reward filter (minimum 1.5)
+        if entry_levels['risk_reward'] < 1.5 and signal in ['BUY', 'SHORT']:
+            original_signal = signal
+            signal = 'WAIT'
+            action = f'Risk:Reward too low ({entry_levels["risk_reward"]:.2f}) - wait for better setup'
+            confidence = 'LOW'
+            reasoning_suffix_rr = f"\n\n⚠️ Original {original_signal} signal filtered out due to poor Risk:Reward ratio ({entry_levels['risk_reward']:.2f} < 1.5 minimum)"
+        else:
+            reasoning_suffix_rr = ""
+
         # Apply user context to refine action recommendation
         action, reasoning_suffix = self._apply_user_context(signal, action, user_context, latest['close'])
-        
+
         return {
             'signal': signal,
             'action': action,
@@ -316,8 +354,9 @@ class TradingSignals:
             'stop_loss': entry_levels['stop_loss'],
             'target': entry_levels['target'],
             'risk_reward': entry_levels['risk_reward'],
-            'reasoning': '. '.join(self._generate_reasoning(signal, latest, trend, levels)) + reasoning_suffix,
-            'user_context': user_context
+            'reasoning': '. '.join(self._generate_reasoning(signal, latest, trend, levels)) + reasoning_suffix_rr + reasoning_suffix,
+            'user_context': user_context,
+            'derivatives_data': derivatives_data
         }
     
     def _calculate_entry_levels(self, signal, latest, levels, trend):

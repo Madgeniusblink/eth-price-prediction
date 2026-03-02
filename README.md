@@ -288,3 +288,27 @@ For questions, issues, or suggestions:
 **Built with ❤️ for the crypto community**
 
 *Last updated: January 2026*
+
+## Signal Quality Filters
+
+### Risk:Reward Minimum (1.5:1)
+Signals with risk:reward ratios below 1.5:1 are automatically filtered to **WAIT**. This prevents taking trades where the potential loss exceeds the potential gain relative to a safe threshold.
+
+### Derivatives Context
+The system now fetches real-time derivatives data to improve signal quality:
+- **Funding Rate** — When positive funding is elevated (>0.01%), longs are crowded → BUY signals are penalized. Negative funding penalizes SHORT signals.
+- **Open Interest** — Tracked for regime analysis
+- **Long/Short Ratio** — Global positioning context
+- **Fear & Greed Index** — Extreme fear (<20) boosts contrarian BUY; extreme greed (>80) boosts SELL/SHORT
+
+### Accuracy Tracking
+Every prediction is logged and compared against actual prices at 1h and 2h horizons. Stats (win rate, avg P&L) are saved to `data/accuracy_stats.json` and included in reports.
+
+## On-Chain Architecture
+
+See [docs/ON_CHAIN_ARCHITECTURE.md](docs/ON_CHAIN_ARCHITECTURE.md) for the planned on-chain execution architecture using:
+- Custom Solidity Oracle Contract (EIP-712 signed signals)
+- Chainlink Automation for keeper-based execution
+- GMX Perpetuals on Arbitrum as the execution venue
+- FabricBloc as the REST/WebSocket API bridge
+- EIP-4337 Account Abstraction for automated wallets
