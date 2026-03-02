@@ -89,7 +89,8 @@ def _fetch_open_interest_okx(max_retries: int) -> Optional[float]:
 
 
 def _fetch_lsr_okx(max_retries: int) -> Optional[float]:
-    """OKX: GET /api/v5/rubik/stat/contracts/long-short-account-ratio?ccy=ETH&period=1H"""
+    """OKX: long/short account ratio for ETH perpetuals."""
+    # OKX endpoint returns data as list of [ts, longRatio, shortRatio]
     url = "https://www.okx.com/api/v5/rubik/stat/contracts/long-short-account-ratio"
     params = {"ccy": "ETH", "period": "1H"}
     for attempt in range(max_retries):
@@ -97,8 +98,11 @@ def _fetch_lsr_okx(max_retries: int) -> Optional[float]:
             r = requests.get(url, params=params, headers=HEADERS, timeout=TIMEOUT)
             r.raise_for_status()
             data = r.json()
-            # Returns list sorted newest first
-            latest = data["data"][0]
+            rows = data.get("data", [])
+            if not rows:
+                # Fallback: try Bybit global L/S ratio
+                return _fetch_lsr_bybit()
+            latest = rows[0]
             long_ratio  = float(latest[1])
             short_ratio = float(latest[2])
             return long_ratio / short_ratio if short_ratio else None
@@ -107,6 +111,23 @@ def _fetch_lsr_okx(max_retries: int) -> Optional[float]:
                 print(f"Error fetching long/short ratio after {max_retries} attempts: {e}")
             else:
                 time.sleep(1)
+    return None
+
+
+def _fetch_lsr_bybit() -> Optional[float]:
+    """Bybit fallback: GET /v5/market/account-ratio?category=linear&symbol=ETHUSDT&period=1h"""
+    try:
+        url = "https://api.bybit.com/v5/market/account-ratio"
+        params = {"category": "linear", "symbol": "ETHUSDT", "period": "1h", "limit": 1}
+        r = requests.get(url, params=params, headers=HEADERS, timeout=TIMEOUT)
+        r.raise_for_status()
+        rows = r.json()["result"]["list"]
+        if rows:
+            buy  = float(rows[0]["buyRatio"])
+            sell = float(rows[0]["sellRatio"])
+            return buy / sell if sell else None
+    except Exception as e:
+        print(f"Bybit L/S fallback failed: {e}")
     return None
 
 

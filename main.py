@@ -96,6 +96,13 @@ def main():
                 print("⚠️  Output files not found — sending minimal Slack alert")
                 _send_minimal_alert(slack_webhook, "⚠️ ETH prediction ran but output files missing. Check logs.")
 
+        # Create latest_prediction.json (alias for predictions_summary.json)
+        # Required by the GitHub Actions archive step
+        pred_src = script_dir / "predictions_summary.json"
+        if pred_src.exists():
+            import shutil
+            shutil.copy(str(pred_src), str(script_dir / "latest_prediction.json"))
+
         print("\n🎉 ETH prediction pipeline completed successfully!")
 
     except subprocess.CalledProcessError as e:
@@ -129,3 +136,4 @@ def _send_minimal_alert(webhook_url: str, text: str):
 
 if __name__ == "__main__":
     main()
+# This is appended - do not use
