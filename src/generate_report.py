@@ -288,12 +288,22 @@ def generate_trading_signals():
         filtered_signals = convert_numpy_types(filtered_signals)
         filter_info = convert_numpy_types(filter_info)
         
+        # Fetch derivatives data and include in output
+        derivatives_ctx = {}
+        try:
+            from derivatives_data import fetch_derivatives_data
+            derivatives_ctx = fetch_derivatives_data()
+            derivatives_ctx = convert_numpy_types(derivatives_ctx)
+        except Exception as de:
+            logger.warning(f"Derivatives data fetch skipped: {de}")
+
         # Combine into single structure
         return {
             'trend_analysis': trend,
             'support_resistance': levels,
             'trading_signal': filtered_signals,
             'market_filters': filter_info,
+            'derivatives_context': derivatives_ctx,
             'generated_at': datetime.now(timezone.utc).isoformat()
         }
     
