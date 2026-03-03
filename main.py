@@ -67,16 +67,17 @@ def main():
         if not slack_webhook:
             print("⚠️  SLACK_WEBHOOK_URL not set — skipping notification")
         else:
-            # Locate the output files (generate_report saves to BASE_DIR root)
-            predictions_file = str(script_dir / "predictions_summary.json")
-            signals_file     = str(script_dir / "trading_signals.json")
-            report_url       = "https://github.com/Madgeniusblink/eth-price-prediction"
+            # Always use reports/latest/ — these are freshly generated each run.
+            # Root-level trading_signals.json is stale (not committed by workflow).
+            predictions_file = str(script_dir / "reports/latest/predictions_summary.json")
+            signals_file     = str(script_dir / "reports/latest/trading_signals.json")
+            report_url       = "https://github.com/Madgeniusblink/eth-price-prediction/tree/main/reports/latest"
 
-            # Fallback: check reports/latest if not in root
+            # Fallback to root if reports/latest not yet populated
             if not os.path.exists(predictions_file):
-                predictions_file = str(script_dir / "reports/latest/predictions_summary.json")
+                predictions_file = str(script_dir / "predictions_summary.json")
             if not os.path.exists(signals_file):
-                signals_file = str(script_dir / "reports/latest/trading_signals.json")
+                signals_file = str(script_dir / "trading_signals.json")
 
             pred_ok    = os.path.exists(predictions_file)
             signals_ok = os.path.exists(signals_file)

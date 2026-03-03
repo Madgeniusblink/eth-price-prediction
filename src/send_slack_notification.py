@@ -57,6 +57,13 @@ def send_slack_notification(predictions_file, signals_file, report_url):
     deriv     = signals.get('derivatives_context', {})
     mkt_filt  = signals.get('market_filters', {})
 
+    # Use signals current_price as ground truth — avoids stale file mismatches
+    signals_price = sr.get('current_price', 0)
+    if signals_price and abs(signals_price - current_price) / max(current_price, 1) > 0.05:
+        # >5% mismatch between predictions and signals data — log warning, use signals price
+        print(f"⚠️  Price mismatch: predictions={current_price}, signals={signals_price}. Using signals price.")
+        current_price = signals_price
+
     signal     = trading.get('signal', 'WAIT')
     action     = trading.get('action', 'Monitor position')
     confidence = trading.get('confidence', 'MEDIUM')
