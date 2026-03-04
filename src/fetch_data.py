@@ -131,9 +131,9 @@ def fetch_current_price():
     """
     prices = {}
     sources = [
-        ('Kraken', lambda: fetch_kraken_spot_price()),
+        ('CoinGecko', fetch_coingecko_price),
         ('Coinbase', fetch_coinbase_price),
-        ('CoinGecko', fetch_coingecko_price)
+        ('Kraken', lambda: fetch_kraken_spot_price()),
     ]
     
     # Try each source in order
