@@ -1,49 +1,95 @@
 {
-  "generated_at": "2026-01-05T15:32:42.732191",
-  "current_price": 3248.16,
-  "last_data_timestamp": "2026-01-05T20:32:00",
-  "trend_analysis": {
-    "trend": "BULLISH",
-    "rsi": 64.53070445676704,
-    "rsi_signal": "NEUTRAL",
-    "macd": 5.516273908526273,
-    "macd_signal": "BULLISH",
-    "bb_position": "MIDDLE",
-    "current_price": 3248.16,
-    "sma_20": 3241.9865,
-    "bb_upper": 3257.698499135775,
-    "bb_lower": 3226.274500864225
+  "timestamp": "2026-03-04T07:25:49.671647+00:00",
+  "current_price": 1979.13,
+  "predictions": {
+    "15min": {
+      "timestamp": "2026-03-04T07:40:49.671647+00:00",
+      "price": 1980.8227576347663,
+      "change_pct": 0.08553039137227807,
+      "models": {
+        "linear": 1982.29659819982,
+        "polynomial": 1982.760675436295,
+        "random_forest": 1979.5934500000005
+      },
+      "weights": {
+        "linear": 0.20931226222425114,
+        "polynomial": 0.20949110926264178,
+        "ml_features": 0.581196628513107
+      },
+      "weight_source": "r2_scores"
+    },
+    "30min": {
+      "timestamp": "2026-03-04T07:55:49.671647+00:00",
+      "price": 1981.6597369542878,
+      "change_pct": 0.1278206562624854,
+      "models": {
+        "linear": 1984.144388478848,
+        "polynomial": 1984.9097602241256,
+        "random_forest": 1979.5934500000005
+      },
+      "weights": {
+        "linear": 0.20931226222425114,
+        "polynomial": 0.20949110926264178,
+        "ml_features": 0.581196628513107
+      },
+      "weight_source": "r2_scores"
+    },
+    "60min": {
+      "timestamp": "2026-03-04T08:25:49.671647+00:00",
+      "price": 1983.3731446688705,
+      "change_pct": 0.21439443941885572,
+      "models": {
+        "linear": 1987.8399690369038,
+        "polynomial": 1989.3962388677883,
+        "random_forest": 1979.5934500000005
+      },
+      "weights": {
+        "linear": 0.20931226222425114,
+        "polynomial": 0.20949110926264178,
+        "ml_features": 0.581196628513107
+      },
+      "weight_source": "r2_scores"
+    },
+    "120min": {
+      "timestamp": "2026-03-04T09:25:49.671647+00:00",
+      "price": 1986.9577564001952,
+      "change_pct": 0.39551501923547644,
+      "models": {
+        "linear": 1995.2311301530153,
+        "polynomial": 1999.12243242712,
+        "random_forest": 1979.5934500000005
+      },
+      "weights": {
+        "linear": 0.20931226222425114,
+        "polynomial": 0.20949110926264178,
+        "ml_features": 0.581196628513107
+      },
+      "weight_source": "r2_scores"
+    }
   },
+  "market_condition": null,
+  "rl_enabled": false,
+  "accuracy_summary": null,
   "model_scores": {
-    "linear": 0.534851170816502,
-    "polynomial": 0.763193497142008,
-    "ml_features": 0.9957765128355823
+    "linear": 0.5,
+    "polynomial": 0.7,
+    "ml_features": 0.9
   },
   "model_weights": {
-    "linear": 0.2331703862946035,
-    "polynomial": 0.33271708515560916,
-    "ml_features": 0.4341125285497873
+    "linear": 0.25,
+    "polynomial": 0.35,
+    "ml_features": 0.4
   },
-  "predictions": {
-    "15m": {
-      "price": 3252.528421642528,
-      "change_pct": 0.13448911514606365,
-      "timestamp": "2026-01-05T20:47:00"
-    },
-    "30m": {
-      "price": 3259.1251204145055,
-      "change_pct": 0.33757944234600323,
-      "timestamp": "2026-01-05T21:02:00"
-    },
-    "60m": {
-      "price": 3275.129659661284,
-      "change_pct": 0.8303057626867005,
-      "timestamp": "2026-01-05T21:32:00"
-    },
-    "120m": {
-      "price": 3318.3833049661307,
-      "change_pct": 2.1619410671312567,
-      "timestamp": "2026-01-05T22:32:00"
-    }
+  "trend_analysis": {
+    "trend": "NEUTRAL",
+    "rsi": 50.0,
+    "rsi_signal": "NEUTRAL",
+    "macd": 0.0,
+    "macd_signal": "NEUTRAL",
+    "bb_position": "MIDDLE",
+    "current_price": 1979.13,
+    "sma_20": 1979.13,
+    "bb_upper": 2018.7126,
+    "bb_lower": 1939.5474000000002
   }
 }
