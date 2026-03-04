@@ -317,12 +317,51 @@ def generate_trading_signals():
             logger.warning(f"Derivatives data fetch skipped: {de}")
 
         # Combine into single structure
+        # ── On-chain & DeFi signals ───────────────────────────────────────────
+        onchain_ctx = {}
+        defi_ctx    = {}
+        signal_score_ctx = {}
+        kelly_ctx = {}
+        try:
+            from onchain_data import get_all_onchain_signals
+            onchain_ctx = get_all_onchain_signals()
+        except Exception as oe:
+            logger.warning(f"Onchain data fetch skipped: {oe}")
+
+        try:
+            from defi_signals import get_defi_signals
+            pool_data = onchain_ctx.get('uniswap_v3_pool', {})
+            # Compute 30-day ATR from available data
+            atr_30d = 150.0  # fallback
+            try:
+                _df4h = pd.read_csv(os.path.join(BASE_DIR, 'eth_4h_data.csv'))
+                _df4h = _df4h.tail(180)
+                hl = _df4h['high'] - _df4h['low']
+                atr_30d = float(hl.rolling(30).mean().iloc[-1])
+            except Exception:
+                pass
+            current_px = df['close'].iloc[-1] if df is not None and len(df) > 0 else 2000.0
+            defi_ctx = get_defi_signals(pool_data, onchain_ctx, atr_30d, float(current_px))
+        except Exception as de:
+            logger.warning(f"DeFi signals skipped: {de}")
+
+        try:
+            signals_obj = TradingSignals(df)
+            signal_score_ctx = signals_obj.compute_signal_score()
+            kelly_ctx = signals_obj.compute_kelly_fraction()
+        except Exception as ke:
+            logger.warning(f"Signal score/kelly skipped: {ke}")
+
         return {
             'trend_analysis': trend,
             'support_resistance': levels,
             'trading_signal': filtered_signals,
             'market_filters': filter_info,
             'derivatives_context': derivatives_ctx,
+            'defi_signals': defi_ctx,
+            'onchain_context': onchain_ctx,
+            'signal_score': signal_score_ctx,
+            'kelly': kelly_ctx,
             'generated_at': datetime.now(timezone.utc).isoformat()
         }
     

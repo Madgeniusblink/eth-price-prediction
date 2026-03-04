@@ -255,5 +255,116 @@ def main():
     print(f"✓ Data is FRESH and ready for predictions!")
     print()
 
+def fetch_coingecko_spot_extended():
+    """
+    Fetch ETH spot price with 24h vol and change from CoinGecko.
+    Returns dict with price, change_24h, volume_24h.
+    """
+    try:
+        url = 'https://api.coingecko.com/api/v3/simple/price'
+        params = {
+            'ids': 'ethereum',
+            'vs_currencies': 'usd',
+            'include_24hr_vol': 'true',
+            'include_24hr_change': 'true',
+        }
+        response = requests.get(url, params=params, timeout=15)
+        response.raise_for_status()
+        data = response.json()['ethereum']
+        return {
+            'price': float(data['usd']),
+            'change_24h': float(data.get('usd_24h_change', 0)),
+            'volume_24h': float(data.get('usd_24h_vol', 0)),
+        }
+    except Exception as e:
+        logger.warning(f"CoinGecko extended price fetch failed: {e}")
+        return None
+
+
+def fetch_coingecko_ohlc(days=7):
+    """
+    Fetch OHLC data from CoinGecko (1 API call).
+    Returns DataFrame with columns: timestamp, open, high, low, close.
+    Uses delta fetch: only returns new candles since last_fetch.json.
+    """
+    import os
+    last_fetch_file = os.path.join(BASE_DIR, 'data', 'last_fetch.json')
+
+    try:
+        url = 'https://api.coingecko.com/api/v3/coins/ethereum/ohlc'
+        params = {'vs_currency': 'usd', 'days': str(days)}
+        response = requests.get(url, params=params, timeout=15)
+        response.raise_for_status()
+        raw = response.json()  # [[timestamp_ms, open, high, low, close], ...]
+
+        df = pd.DataFrame(raw, columns=['timestamp_ms', 'open', 'high', 'low', 'close'])
+        df['timestamp'] = pd.to_datetime(df['timestamp_ms'], unit='ms')
+        df = df.drop(columns=['timestamp_ms'])
+        df[['open', 'high', 'low', 'close']] = df[['open', 'high', 'low', 'close']].astype(float)
+        df = df.sort_values('timestamp').reset_index(drop=True)
+
+        # Delta fetch: filter to only new candles
+        last_ts = None
+        if os.path.exists(last_fetch_file):
+            try:
+                with open(last_fetch_file) as f:
+                    meta = json.load(f)
+                last_ts = meta.get('last_ohlc_timestamp')
+            except Exception:
+                pass
+
+        if last_ts:
+            df = df[df['timestamp'] > pd.Timestamp(last_ts)]
+
+        # Save new last fetch timestamp
+        if not df.empty:
+            os.makedirs(os.path.dirname(last_fetch_file), exist_ok=True)
+            with open(last_fetch_file, 'w') as f:
+                json.dump({'last_ohlc_timestamp': str(df['timestamp'].max())}, f)
+
+        logger.info(f"CoinGecko OHLC: {len(df)} new candles")
+        return df
+
+    except Exception as e:
+        logger.warning(f"CoinGecko OHLC fetch failed: {e}")
+        return None
+
+
+def fetch_defillama_uniswap():
+    """
+    Fetch Uniswap protocol data from DeFiLlama.
+    Returns dict with tvl and recent volume estimate.
+    """
+    try:
+        url = 'https://api.llama.fi/protocol/uniswap'
+        response = requests.get(url, timeout=15)
+        response.raise_for_status()
+        data = response.json()
+        tvl = data.get('currentChainTvls', {}).get('Ethereum', 0) or data.get('tvl', 0)
+        # tvl may be a list (time series) or a number
+        if isinstance(tvl, list) and len(tvl) > 0:
+            tvl = tvl[-1].get('totalLiquidityUSD', 0)
+        return {'tvl': float(tvl) if tvl else 0}
+    except Exception as e:
+        logger.warning(f"DeFiLlama fetch failed: {e}")
+        return None
+
+
+def fetch_quant_data():
+    """
+    Fetch all data needed for quant DeFi report.
+    Returns dict with: spot, ohlc_df, defillama
+    Uses 2 CoinGecko calls max.
+    """
+    spot = fetch_coingecko_spot_extended()
+    ohlc_df = fetch_coingecko_ohlc(days=7)
+    defillama = fetch_defillama_uniswap()
+    return {
+        'spot': spot,
+        'ohlc_df': ohlc_df,
+        'defillama': defillama,
+    }
+
+
 if __name__ == '__main__':
     main()

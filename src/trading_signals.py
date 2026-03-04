@@ -63,10 +63,48 @@ class TradingSignals:
         ranges = pd.concat([high_low, high_close, low_close], axis=1)
         true_range = ranges.max(axis=1)
         self.df['atr'] = true_range.rolling(window=14).mean()
+        self.df['atr_14'] = self.df['atr']  # alias for predict_rl features
         
         # Volume indicators
         self.df['volume_sma'] = self.df['volume'].rolling(window=20).mean()
         self.df['volume_ratio'] = self.df['volume'] / self.df['volume_sma']
+
+        # ── NEW: VWAP (24-hour rolling) ──────────────────────────────────────
+        window_vwap = min(24, len(self.df))
+        typical_price = (self.df['high'] + self.df['low'] + self.df['close']) / 3
+        self.df['vwap'] = (
+            (typical_price * self.df['volume']).rolling(window=window_vwap).sum()
+            / self.df['volume'].rolling(window=window_vwap).sum()
+        )
+
+        # ── NEW: OBV (On-Balance Volume) ─────────────────────────────────────
+        obv = [0]
+        for i in range(1, len(self.df)):
+            if self.df['close'].iloc[i] > self.df['close'].iloc[i - 1]:
+                obv.append(obv[-1] + self.df['volume'].iloc[i])
+            elif self.df['close'].iloc[i] < self.df['close'].iloc[i - 1]:
+                obv.append(obv[-1] - self.df['volume'].iloc[i])
+            else:
+                obv.append(obv[-1])
+        self.df['obv'] = obv
+        self.df['obv_sma'] = self.df['obv'].rolling(window=20).mean()
+
+        # ── NEW: Stochastic RSI ───────────────────────────────────────────────
+        rsi_min = self.df['rsi'].rolling(window=14).min()
+        rsi_max = self.df['rsi'].rolling(window=14).max()
+        rsi_range = rsi_max - rsi_min
+        self.df['stoch_rsi'] = np.where(
+            rsi_range > 0,
+            (self.df['rsi'] - rsi_min) / rsi_range,
+            0.5,
+        )
+
+        # ── NEW: Volume Profile (high-volume nodes) ───────────────────────────
+        # Store rolling 50-period volume-weighted price clusters (top 3 nodes)
+        self._compute_volume_profile(lookback=50)
+
+        # ── NEW: RSI Divergence ───────────────────────────────────────────────
+        self.df['rsi_divergence'] = self._compute_rsi_divergence()
     
     def detect_trend(self, timeframe='current'):
         """
@@ -516,6 +554,280 @@ class TradingSignals:
                 reasoning_suffix = "\n\nYou are currently OUT OF TRADE. No clear entry opportunity. Wait for a better setup."
         
         return action, reasoning_suffix
+
+    def _compute_volume_profile(self, lookback: int = 50):
+        """Identify high-volume price nodes (simplified volume profile)."""
+        self.volume_nodes = []
+        try:
+            recent = self.df.tail(lookback)
+            # Bin prices into 10 buckets, find highest volume bucket
+            price_range = recent['close'].max() - recent['close'].min()
+            if price_range <= 0:
+                return
+            buckets = 10
+            bucket_size = price_range / buckets
+            low = recent['close'].min()
+            vol_buckets = {}
+            for _, row in recent.iterrows():
+                bucket = int((row['close'] - low) / bucket_size)
+                bucket = min(bucket, buckets - 1)
+                price_node = low + bucket * bucket_size + bucket_size / 2
+                vol_buckets[price_node] = vol_buckets.get(price_node, 0) + row['volume']
+            # Top 3 by volume
+            self.volume_nodes = sorted(
+                vol_buckets.items(), key=lambda x: x[1], reverse=True
+            )[:3]
+        except Exception:
+            self.volume_nodes = []
+
+    def _compute_rsi_divergence(self) -> pd.Series:
+        """Detect RSI divergence (bullish/bearish) over rolling 20-period window."""
+        divergence = pd.Series('NONE', index=self.df.index)
+        try:
+            for i in range(20, len(self.df)):
+                window_price = self.df['close'].iloc[i - 20:i]
+                window_rsi = self.df['rsi'].iloc[i - 20:i].dropna()
+                if len(window_rsi) < 10:
+                    continue
+                price_trend = window_price.iloc[-1] - window_price.iloc[0]
+                rsi_trend = window_rsi.iloc[-1] - window_rsi.iloc[0]
+                if price_trend < 0 and rsi_trend > 0:
+                    divergence.iloc[i] = 'BULLISH'
+                elif price_trend > 0 and rsi_trend < 0:
+                    divergence.iloc[i] = 'BEARISH'
+        except Exception:
+            pass
+        return divergence
+
+    def compute_signal_score(self) -> dict:
+        """
+        Compute 0-100 signal score from institutional indicators.
+        BUY if score > 65, SELL if score < 35, WAIT otherwise.
+        """
+        latest = self.df.iloc[-1]
+        score = 50  # neutral start
+
+        # EMA momentum (+15 bull / -15 bear)
+        if latest['ema_12'] > latest['ema_26']:
+            score += 15
+        else:
+            score -= 15
+
+        # RSI momentum (+10) + not overbought (+5) / oversold penalty
+        rsi = latest['rsi'] if not pd.isna(latest['rsi']) else 50
+        if rsi > 50:
+            score += 10
+        else:
+            score -= 10
+        if rsi < 70:
+            score += 5
+        else:
+            score -= 5
+
+        # MACD crossover (+15 / -15)
+        macd = latest['macd'] if not pd.isna(latest['macd']) else 0
+        macd_sig = latest['macd_signal'] if not pd.isna(latest['macd_signal']) else 0
+        if macd > macd_sig:
+            score += 15
+        else:
+            score -= 15
+
+        # OBV trend (+15 / -15)
+        obv_now = latest['obv'] if not pd.isna(latest['obv']) else 0
+        obv_sma = latest['obv_sma'] if not pd.isna(latest['obv_sma']) else 0
+        if obv_now > obv_sma:
+            score += 15
+            obv_trend = 'UP'
+        else:
+            score -= 15
+            obv_trend = 'DOWN'
+
+        # Stoch RSI not overextended (+10 / -10)
+        stoch = latest['stoch_rsi'] if not pd.isna(latest['stoch_rsi']) else 0.5
+        if stoch < 0.8:
+            score += 10
+        else:
+            score -= 10
+
+        # Above VWAP (+15 / -15)
+        vwap = latest['vwap'] if not pd.isna(latest['vwap']) else latest['close']
+        if latest['close'] > vwap:
+            score += 15
+        else:
+            score -= 15
+
+        # RSI divergence (+15 / -15)
+        div = latest['rsi_divergence'] if 'rsi_divergence' in self.df.columns else 'NONE'
+        if div == 'BULLISH':
+            score += 15
+        elif div == 'BEARISH':
+            score -= 15
+
+        # Clamp to [0, 100]
+        score = max(0, min(100, score))
+
+        if score > 65:
+            signal = 'BUY'
+        elif score < 35:
+            signal = 'SELL'
+        else:
+            signal = 'WAIT'
+
+        # Confidence
+        if score > 80 or score < 20:
+            confidence = 'HIGH'
+        elif score > 65 or score < 35:
+            confidence = 'MEDIUM'
+        else:
+            confidence = 'LOW'
+
+        return {
+            'score': round(score, 1),
+            'signal': signal,
+            'confidence': confidence,
+            'obv_trend': obv_trend,
+            'stoch_rsi': round(float(stoch), 3),
+            'vwap': round(float(vwap), 2),
+            'rsi_divergence': str(div),
+        }
+
+    def compute_kelly_fraction(self, tracker_history: dict | None = None) -> dict:
+        """
+        Compute Kelly Criterion position sizing fraction.
+        Uses backtested win_rate and avg win/loss from tracker history.
+        Returns kelly_fraction capped at 0.25.
+        """
+        try:
+            if tracker_history:
+                summary = tracker_history.get('summary', {})
+                dir_acc = summary.get('directional_accuracy', 55) / 100
+                avg_win = summary.get('avg_win_pct', 1.5)
+                avg_loss = summary.get('avg_loss_pct', 1.0)
+            else:
+                # Conservative defaults
+                dir_acc = 0.55
+                avg_win = 1.5
+                avg_loss = 1.0
+
+            win_rate = max(0.01, min(0.99, dir_acc))
+            lose_rate = 1 - win_rate
+            b = avg_win / max(avg_loss, 0.001)
+
+            kelly = (b * win_rate - lose_rate) / b
+            kelly_fraction = max(0.0, min(0.25, kelly))
+
+            return {
+                'kelly_fraction': round(kelly_fraction, 4),
+                'kelly_pct': round(kelly_fraction * 100, 2),
+                'win_rate': round(win_rate, 3),
+                'win_loss_ratio': round(b, 3),
+            }
+        except Exception as e:
+            return {'kelly_fraction': 0.05, 'kelly_pct': 5.0, 'win_rate': 0.55, 'win_loss_ratio': 1.5}
+
+
+def compute_signal_strength(signals_data: dict, regime: str = "MEDIUM") -> dict:
+    """
+    Compute a 0-100 signal strength score from existing signals data dict.
+    Weights: RSI 20% + MACD 20% + BB position 20% + volume 20% + regime 20%
+
+    Args:
+        signals_data: dict from trading_signals.json (as written by generate_report.py)
+        regime: volatility regime label (LOW/MEDIUM/HIGH/EXTREME)
+
+    Returns:
+        dict with score, components, filtered_signal, sushiswap_context
+    """
+    try:
+        trend_a = signals_data.get('trend_analysis', {})
+        trading = signals_data.get('trading_signal', {})
+
+        rsi = trend_a.get('rsi', 50)
+        macd_signal = str(trend_a.get('macd_signal', 'neutral')).lower()
+        bb_pos = trend_a.get('bb_position', 0.5)
+        volume_ratio = trend_a.get('volume_ratio', 1.0)
+        raw_signal = trading.get('signal', 'WAIT')
+
+        # RSI score (0-20): oversold = max bullish, overbought = max bearish
+        if raw_signal in ('BUY',):
+            rsi_score = max(0, min(20, (70 - rsi) / 40 * 20)) if rsi < 70 else 0
+        elif raw_signal in ('SELL', 'SHORT'):
+            rsi_score = max(0, min(20, (rsi - 30) / 40 * 20)) if rsi > 30 else 0
+        else:
+            rsi_score = 10  # neutral
+
+        # MACD score (0-20)
+        if 'bull' in macd_signal:
+            macd_score = 20 if raw_signal == 'BUY' else 5
+        elif 'bear' in macd_signal:
+            macd_score = 20 if raw_signal in ('SELL', 'SHORT') else 5
+        else:
+            macd_score = 10
+
+        # BB position score (0-20)
+        if raw_signal == 'BUY':
+            bb_score = max(0, min(20, (1 - bb_pos) * 20))  # lower = better buy
+        elif raw_signal in ('SELL', 'SHORT'):
+            bb_score = max(0, min(20, bb_pos * 20))  # higher = better sell
+        else:
+            bb_score = 10
+
+        # Volume score (0-20)
+        vol_score = min(20, (volume_ratio or 1.0) * 10)
+
+        # Regime score (0-20): penalise extreme vol for longs
+        regime_score = 10  # default neutral
+        if regime == 'LOW':
+            regime_score = 20 if raw_signal == 'BUY' else 10
+        elif regime == 'MEDIUM':
+            regime_score = 15
+        elif regime == 'HIGH':
+            regime_score = 8
+        elif regime == 'EXTREME':
+            regime_score = 0  # no confidence in extreme vol
+
+        total_score = int(rsi_score + macd_score + bb_score + vol_score + regime_score)
+        total_score = max(0, min(100, total_score))
+
+        # Regime filter: suppress BUY in EXTREME vol
+        filtered_signal = raw_signal
+        if regime == 'EXTREME' and raw_signal == 'BUY':
+            filtered_signal = 'WAIT'
+
+        # SushiSwap context
+        sushi_context = None
+        if filtered_signal == 'BUY':
+            sushi_context = "ETH/USDC — consider LP entry if range stable; ETH/WBTC — monitor BTC correlation"
+        elif filtered_signal in ('SELL', 'SHORT'):
+            sushi_context = "ETH/USDC — reduce LP exposure; ETH/WBTC — correlation sell pressure likely"
+        else:
+            sushi_context = "ETH/USDC — hold current positions; monitor funding rate"
+
+        return {
+            'score': total_score,
+            'signal': filtered_signal,
+            'raw_signal': raw_signal,
+            'regime_filtered': (filtered_signal != raw_signal),
+            'components': {
+                'rsi': int(rsi_score),
+                'macd': int(macd_score),
+                'bb': int(bb_score),
+                'volume': int(vol_score),
+                'regime': int(regime_score),
+            },
+            'sushiswap_context': sushi_context,
+        }
+    except Exception as e:
+        return {
+            'score': 50,
+            'signal': 'WAIT',
+            'raw_signal': 'WAIT',
+            'regime_filtered': False,
+            'components': {},
+            'sushiswap_context': "Data unavailable",
+            'error': str(e),
+        }
+
 
 def main():
     """Test the trading signals module"""

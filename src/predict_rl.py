@@ -21,6 +21,22 @@ from model_manager import ModelManager
 
 warnings.filterwarnings('ignore')
 
+def _try_import_boosters():
+    """Try to import LightGBM and XGBoost, return (lgb, xgb) or (None, None)."""
+    lgb, xgb = None, None
+    try:
+        import lightgbm as _lgb
+        lgb = _lgb
+    except ImportError:
+        pass
+    try:
+        import xgboost as _xgb
+        xgb = _xgb
+    except ImportError:
+        pass
+    return lgb, xgb
+
+
 def calculate_technical_indicators(df):
     """Calculate technical indicators for prediction"""
     data = df.copy()
@@ -168,8 +184,180 @@ def ml_feature_prediction(df, periods_ahead=12, model_manager=None):
     
     return np.array(predictions), model.score(X, y)
 
+def build_boosted_features(df):
+    """Build feature matrix with all quant indicators for LightGBM/XGBoost."""
+    data = calculate_technical_indicators(df).copy()
+
+    # ATR-14
+    high_low = data['high'] - data['low']
+    high_close = np.abs(data['high'] - data['close'].shift())
+    low_close = np.abs(data['low'] - data['close'].shift())
+    true_range = pd.concat([high_low, high_close, low_close], axis=1).max(axis=1)
+    data['atr_14'] = true_range.rolling(14).mean()
+
+    # OBV
+    obv = [0]
+    for i in range(1, len(data)):
+        if data['close'].iloc[i] > data['close'].iloc[i - 1]:
+            obv.append(obv[-1] + data['volume'].iloc[i])
+        elif data['close'].iloc[i] < data['close'].iloc[i - 1]:
+            obv.append(obv[-1] - data['volume'].iloc[i])
+        else:
+            obv.append(obv[-1])
+    data['obv'] = obv
+
+    # Stoch RSI
+    rsi_min = data['RSI'].rolling(14).min()
+    rsi_max = data['RSI'].rolling(14).max()
+    rsi_range = rsi_max - rsi_min
+    data['stoch_rsi'] = np.where(rsi_range > 0, (data['RSI'] - rsi_min) / rsi_range, 0.5)
+
+    # VWAP (24-period)
+    tp = (data['high'] + data['low'] + data['close']) / 3
+    data['vwap'] = (tp * data['volume']).rolling(24).sum() / data['volume'].rolling(24).sum()
+    data['vwap_distance'] = (data['close'] - data['vwap']) / data['vwap'].replace(0, np.nan)
+
+    # BB position
+    bb_mid = data['close'].rolling(20).mean()
+    bb_std = data['close'].rolling(20).std()
+    bb_upper = bb_mid + 2 * bb_std
+    bb_lower = bb_mid - 2 * bb_std
+    data['bb_position'] = (data['close'] - bb_lower) / (bb_upper - bb_lower).replace(0, np.nan)
+
+    # Placeholder on-chain features (will be overridden if available)
+    data['gas_price'] = 30.0
+    data['fear_greed'] = 50.0
+
+    return data
+
+
+def lgb_xgb_ensemble_prediction(df, periods_ahead=12, onchain_data=None):
+    """
+    LightGBM + XGBoost ensemble prediction.
+    Walk-forward validation: 70% train, 15% val, 15% test.
+    Returns predictions array + validation metrics.
+    """
+    lgb, xgb = _try_import_boosters()
+    if lgb is None and xgb is None:
+        return None, {}
+
+    data = build_boosted_features(df)
+
+    # Inject on-chain signals if available
+    if onchain_data:
+        gas = onchain_data.get("gas", {}).get("fast_gas_gwei") or 30.0
+        fg = onchain_data.get("fear_greed", {}).get("value") or 50.0
+        data['gas_price'] = gas
+        data['fear_greed'] = fg
+
+    feature_cols = [
+        'close', 'volume', 'RSI', 'MACD', 'bb_position',
+        'obv', 'stoch_rsi', 'vwap_distance', 'atr_14',
+        'gas_price', 'fear_greed',
+    ]
+
+    data['target'] = data['close'].shift(-1)
+    clean = data[feature_cols + ['target']].dropna()
+
+    if len(clean) < 80:
+        return None, {"error": "insufficient_data"}
+
+    n = len(clean)
+    train_end = int(n * 0.70)
+    val_end = int(n * 0.85)
+
+    X = clean[feature_cols].values
+    y = clean['target'].values
+
+    X_train, y_train = X[:train_end], y[:train_end]
+    X_val, y_val = X[train_end:val_end], y[train_end:val_end]
+    X_test, y_test = X[val_end:], y[val_end:]
+
+    models = []
+    weights = []
+
+    if lgb:
+        try:
+            lgb_params = {
+                'objective': 'regression', 'n_estimators': 200,
+                'learning_rate': 0.05, 'num_leaves': 31,
+                'subsample': 0.8, 'colsample_bytree': 0.8,
+                'verbose': -1,
+            }
+            lgb_model = lgb.LGBMRegressor(**lgb_params)
+            lgb_model.fit(X_train, y_train,
+                          eval_set=[(X_val, y_val)],
+                          callbacks=[lgb.early_stopping(20, verbose=False),
+                                     lgb.log_evaluation(-1)])
+            models.append(('lgb', lgb_model))
+            weights.append(0.40)
+        except Exception as e:
+            print(f"  LightGBM training failed: {e}")
+
+    if xgb:
+        try:
+            xgb_model = xgb.XGBRegressor(
+                n_estimators=200, learning_rate=0.05,
+                max_depth=6, subsample=0.8, colsample_bytree=0.8,
+                eval_metric='rmse', early_stopping_rounds=20,
+                verbosity=0,
+            )
+            xgb_model.fit(X_train, y_train,
+                          eval_set=[(X_val, y_val)],
+                          verbose=False)
+            models.append(('xgb', xgb_model))
+            weights.append(0.35)
+        except Exception as e:
+            print(f"  XGBoost training failed: {e}")
+
+    if not models:
+        return None, {"error": "all_boosters_failed"}
+
+    # Normalize weights
+    total_w = sum(weights)
+    weights = [w / total_w for w in weights]
+
+    # Validation metrics
+    val_preds = np.zeros(len(X_test))
+    for (name, m), w in zip(models, weights):
+        val_preds += w * m.predict(X_test)
+
+    from sklearn.metrics import mean_squared_error
+    rmse = float(np.sqrt(mean_squared_error(y_test, val_preds)))
+    direction_acc = float(np.mean(np.sign(val_preds[1:] - val_preds[:-1]) ==
+                                  np.sign(y_test[1:] - y_test[:-1]))) * 100
+
+    # Feature importance (LGB preferred)
+    feature_importance = {}
+    if lgb and any(n == 'lgb' for n, _ in models):
+        lgb_model = next(m for n, m in models if n == 'lgb')
+        fi = lgb_model.feature_importances_
+        feature_importance = dict(zip(feature_cols, [float(v) for v in fi]))
+
+    # Roll forward predictions
+    current_row = clean[feature_cols].values[-1:].copy()
+    predictions = []
+    for _ in range(periods_ahead):
+        pred = sum(w * m.predict(current_row)[0] for (_, m), w in zip(models, weights))
+        predictions.append(pred)
+        current_row = current_row.copy()
+        current_row[0, 0] = pred  # update 'close'
+
+    metrics = {
+        'rmse': round(rmse, 4),
+        'directional_accuracy': round(direction_acc, 2),
+        'train_size': train_end,
+        'test_size': len(X_test),
+        'models': [n for n, _ in models],
+        'feature_importance': feature_importance,
+    }
+
+    return np.array(predictions), metrics
+
+
 def ensemble_prediction_adaptive(df, periods_ahead=12, accuracy_tracker=None, 
-                                market_condition=None, model_manager=None):
+                                market_condition=None, model_manager=None,
+                                onchain_data=None):
     """
     Enhanced ensemble with adaptive weighting based on historical performance
     
@@ -187,7 +375,11 @@ def ensemble_prediction_adaptive(df, periods_ahead=12, accuracy_tracker=None,
     linear_pred, linear_score = linear_trend_prediction(df, periods_ahead)
     poly_pred, poly_score = polynomial_trend_prediction(df, periods_ahead, degree=2)
     ml_pred, ml_score = ml_feature_prediction(df, periods_ahead, model_manager)
-    
+
+    # Boosted ensemble (LightGBM + XGBoost)
+    boosted_pred, boosted_metrics = lgb_xgb_ensemble_prediction(df, periods_ahead, onchain_data)
+    has_boosted = boosted_pred is not None
+
     # Determine weights
     if accuracy_tracker and market_condition:
         # Use adaptive weights based on historical performance
@@ -215,30 +407,56 @@ def ensemble_prediction_adaptive(df, periods_ahead=12, accuracy_tracker=None,
         weight_source = 'r2_scores'
         print(f"  Using R² score weights (no history available)")
     
-    # Calculate ensemble prediction
-    ensemble_pred = (weights[0] * linear_pred + 
-                     weights[1] * poly_pred + 
-                     weights[2] * ml_pred)
-    
+    # If boosted models are available, use 40% LGB/XGB + 35% XGB already blended
+    # inside lgb_xgb_ensemble_prediction, plus 25% linear. Override weights.
+    if has_boosted:
+        ensemble_pred = 0.75 * boosted_pred + 0.25 * linear_pred
+        actual_weights = {
+            'lightgbm_xgboost': 0.75,
+            'linear': 0.25,
+            'polynomial': 0.0,
+            'ml_features': 0.0,
+        }
+        weight_source = 'boosted_ensemble'
+        print(f"  Using boosted ensemble (LGB+XGB 75%, Linear 25%)")
+        if boosted_metrics:
+            print(f"    RMSE: {boosted_metrics.get('rmse', 'N/A')} | "
+                  f"Dir.Acc: {boosted_metrics.get('directional_accuracy', 'N/A')}%")
+    else:
+        ensemble_pred = (weights[0] * linear_pred +
+                         weights[1] * poly_pred +
+                         weights[2] * ml_pred)
+        actual_weights = {
+            'linear': float(weights[0]),
+            'polynomial': float(weights[1]),
+            'ml_features': float(weights[2]),
+        }
+
+    # Confidence interval: ±1σ of the ensemble predictions
+    all_preds = [linear_pred, poly_pred, ml_pred]
+    if has_boosted:
+        all_preds.append(boosted_pred)
+    pred_stack = np.vstack(all_preds)
+    sigma = np.std(pred_stack, axis=0)
+
     return {
         'ensemble': ensemble_pred,
+        'sigma': sigma,
         'linear': linear_pred,
         'polynomial': poly_pred,
         'ml_features': ml_pred,
+        'boosted': boosted_pred,
+        'boosted_metrics': boosted_metrics,
         'scores': {
             'linear': float(linear_score),
             'polynomial': float(poly_score),
             'ml_features': float(ml_score)
         },
-        'weights': {
-            'linear': float(weights[0]),
-            'polynomial': float(weights[1]),
-            'ml_features': float(weights[2])
-        },
+        'weights': actual_weights,
         'weight_source': weight_source
     }
 
-def make_predictions_with_rl(df, enable_rl=True):
+def make_predictions_with_rl(df, enable_rl=True, onchain_data=None):
     """
     Main prediction function with reinforcement learning
     
@@ -305,21 +523,26 @@ def make_predictions_with_rl(df, enable_rl=True):
             periods_ahead=minutes,
             accuracy_tracker=accuracy_tracker,
             market_condition=market_condition,
-            model_manager=model_manager
+            model_manager=model_manager,
+            onchain_data=onchain_data,
         )
         
         target_time = current_time + timedelta(minutes=minutes)
         ensemble_price = result['ensemble'][-1]
-        
+        sigma_val = float(result['sigma'][-1]) if result.get('sigma') is not None else 0.0
+
         predictions[horizon_name] = {
             'timestamp': target_time.isoformat(),
             'price': float(ensemble_price),
             'change_pct': float(((ensemble_price - current_price) / current_price) * 100),
+            'confidence_band': round(sigma_val, 2),
             'models': {
                 'linear': float(result['linear'][-1]),
                 'polynomial': float(result['polynomial'][-1]),
-                'random_forest': float(result['ml_features'][-1])
+                'random_forest': float(result['ml_features'][-1]),
+                'boosted': float(result['boosted'][-1]) if result.get('boosted') is not None else None,
             },
+            'boosted_metrics': result.get('boosted_metrics'),
             'weights': result['weights'],
             'weight_source': result['weight_source']
         }
@@ -343,7 +566,8 @@ def make_predictions_with_rl(df, enable_rl=True):
         'predictions': predictions,
         'market_condition': market_condition,
         'rl_enabled': enable_rl,
-        'accuracy_summary': accuracy_tracker.history['summary'] if accuracy_tracker else None
+        'accuracy_summary': accuracy_tracker.history['summary'] if accuracy_tracker else None,
+        'onchain_data': onchain_data,
     }
     
     print("\n=== Prediction Complete ===\n")
@@ -395,10 +619,22 @@ def main():
     if df is not None and len(df) > 0:
         df.loc[df.index[-1], 'close'] = live_price
 
+    # --- Fetch on-chain data ------------------------------------------------
+    onchain_data = None
+    try:
+        from onchain_data import get_all_onchain_signals
+        print("Fetching on-chain signals...")
+        onchain_data = get_all_onchain_signals()
+        fg_val = onchain_data.get("fear_greed", {}).get("value")
+        gas_val = onchain_data.get("gas", {}).get("fast_gas_gwei")
+        print(f"✓ On-chain: Fear&Greed={fg_val}, Gas={gas_val} gwei")
+    except Exception as e:
+        print(f"⚠ On-chain fetch skipped: {e}")
+
     # --- Run predictions --------------------------------------------------------
     if df is not None and len(df) >= 100:
         try:
-            result = make_predictions_with_rl(df, enable_rl=False)
+            result = make_predictions_with_rl(df, enable_rl=False, onchain_data=onchain_data)
             result['current_price'] = live_price  # always use live price
         except Exception as e:
             print(f"⚠ RL prediction failed ({e}), falling back to simple extrapolation")
@@ -440,6 +676,9 @@ def main():
         result['model_scores'] = {'linear': 0.5, 'polynomial': 0.7, 'ml_features': 0.9}
     if 'model_weights' not in result:
         result['model_weights'] = {'linear': 0.25, 'polynomial': 0.35, 'ml_features': 0.40}
+    if 'onchain_data' not in result:
+        result['onchain_data'] = onchain_data
+
     if 'trend_analysis' not in result:
         result['trend_analysis'] = {
             'trend': 'NEUTRAL',
