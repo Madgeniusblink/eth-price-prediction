@@ -342,5 +342,125 @@ def main():
     else:
         print("✗ Sharpe Ratio: FAIL (<0.5)")
 
+def walk_forward_backtest(df, train_size=300, step=1, forecast_horizon=1):
+    """
+    Walk-forward backtest — the correct way to validate time series models.
+
+    NO data leakage: training window always precedes test point chronologically.
+    Primary metric: directional accuracy (not R²).
+
+    Args:
+        df: DataFrame with 'close' column and datetime index/timestamps
+        train_size: Number of candles in each training window
+        step: Number of candles to advance per iteration
+        forecast_horizon: Steps ahead to predict (1 = next candle)
+
+    Returns:
+        dict: {
+            total_predictions, directional_accuracy_pct, win_rate,
+            rmse, mae, sharpe_ratio, results (list of per-step results)
+        }
+    """
+    from sklearn.linear_model import LinearRegression
+
+    prices = df['close'].values if hasattr(df['close'], 'values') else np.array(df['close'])
+
+    if len(prices) < train_size + forecast_horizon + 10:
+        raise ValueError(
+            f"Insufficient data for walk-forward backtest. "
+            f"Need {train_size + forecast_horizon + 10} rows, got {len(prices)}."
+        )
+
+    predictions = []
+    actuals = []
+    results = []
+
+    end = len(prices) - forecast_horizon
+    for i in range(train_size, end, step):
+        train = prices[i - train_size:i]
+        actual = prices[i + forecast_horizon - 1]
+
+        # Simple linear model on training window (baseline)
+        X_train = np.arange(len(train)).reshape(-1, 1)
+        y_train = train
+        model = LinearRegression()
+        model.fit(X_train, y_train)
+        pred = model.predict([[len(train) + forecast_horizon - 1]])[0]
+
+        predictions.append(pred)
+        actuals.append(actual)
+
+        pred_direction = 1 if pred > train[-1] else -1
+        actual_direction = 1 if actual > train[-1] else -1
+
+        results.append({
+            "step": i,
+            "train_end_price": float(train[-1]),
+            "predicted_price": float(pred),
+            "actual_price": float(actual),
+            "predicted_direction": pred_direction,
+            "actual_direction": actual_direction,
+            "correct": pred_direction == actual_direction,
+        })
+
+    predictions = np.array(predictions)
+    actuals = np.array(actuals)
+
+    # Directional accuracy
+    correct = sum(r["correct"] for r in results)
+    total = len(results)
+    directional_accuracy = (correct / total * 100) if total > 0 else 0
+
+    # RMSE / MAE
+    rmse = float(np.sqrt(np.mean((predictions - actuals) ** 2)))
+    mae = float(np.mean(np.abs(predictions - actuals)))
+
+    # Simulated returns (buy on up-prediction, sell on down-prediction)
+    actual_returns = np.diff(actuals) / actuals[:-1]
+    pred_directions = np.array([r["predicted_direction"] for r in results[:-1]])
+    strategy_returns = pred_directions * actual_returns
+
+    sharpe = 0.0
+    if len(strategy_returns) > 1 and strategy_returns.std() > 0:
+        sharpe = float((strategy_returns.mean() / strategy_returns.std()) * np.sqrt(252 * 24 * 60))
+
+    win_rate = directional_accuracy  # same for long-only strategy
+
+    summary = {
+        "generated_at": datetime.now().isoformat(),
+        "total_predictions": total,
+        "directional_accuracy_pct": round(directional_accuracy, 2),
+        "win_rate_pct": round(win_rate, 2),
+        "rmse": round(rmse, 4),
+        "mae": round(mae, 4),
+        "sharpe_ratio": round(sharpe, 4),
+        "train_size": train_size,
+        "forecast_horizon": forecast_horizon,
+        "gate_pass": {
+            "directional_accuracy": directional_accuracy >= 57.0,
+            "sharpe_ratio": sharpe >= 0.5,
+            "overall": directional_accuracy >= 57.0 and sharpe >= 0.5,
+        },
+        "results_sample": results[:5],  # First 5 for debugging
+    }
+
+    # Save to file
+    output_path = Path(BASE_DIR) / "data" / "backtest_results.json"
+    output_path.parent.mkdir(exist_ok=True)
+    with open(output_path, "w") as f:
+        json.dump(summary, f, indent=2)
+
+    print(f"\n=== Walk-Forward Backtest Results ===")
+    print(f"  Total predictions: {total}")
+    print(f"  Directional accuracy: {directional_accuracy:.1f}% (gate: ≥57%)")
+    print(f"  RMSE: ${rmse:.4f}")
+    print(f"  Sharpe ratio: {sharpe:.4f} (gate: ≥0.5)")
+    gate = "✅ PASS" if summary["gate_pass"]["overall"] else "❌ FAIL"
+    print(f"  Gate: {gate}")
+    print(f"  Results saved to: {output_path}")
+
+    return summary
+
+
 if __name__ == '__main__':
     main()

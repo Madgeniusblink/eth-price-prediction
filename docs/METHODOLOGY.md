@@ -133,3 +133,56 @@ For every BUY or SHORT signal generated, the system also calculates a complete t
 -   **Risk/Reward Ratio**: The ratio of the potential profit (Target - Entry) to the potential loss (Entry - Stop Loss). The system is designed to favor trades with a high Risk/Reward Ratio (typically > 1.5).
 
 This comprehensive approach ensures that every signal is not just a prediction, but a complete, risk-managed trade idea that is aligned with the broader market trend.
+
+---
+
+## Version 2.0 Improvements (2026-03-06)
+
+### What Changed and Why
+
+#### 1. Walk-Forward Validation (Mandatory)
+Previous validation used random train/test splits — a critical error for time series (data leakage). All validation now uses `walk_forward_backtest()` in `validate.py`:
+- Training window always precedes test point chronologically
+- No future data ever visible during training
+- Directional accuracy measured on truly out-of-sample data
+
+#### 2. Primary Metrics Changed
+
+| Old (Wrong) | New (Correct) | Rationale |
+|-------------|--------------|-----------|
+| R² Score | Directional Accuracy | R²=0.99 can still lose money |
+| Single-point RMSE | Out-of-sample RMSE | In-sample RMSE is meaningless |
+| N/A | Sharpe Ratio | Risk-adjusted return is the real goal |
+
+**Gate criteria before any model ships:** Directional accuracy ≥ 57% AND Sharpe ≥ 0.5
+
+#### 3. Anti-Patterns Library
+See `docs/ANTI_PATTERNS.md` — 8 documented failure modes with code examples. Every PR must confirm none are present.
+
+#### 4. Data Inventory Tracking
+See `docs/DATA_INVENTORY.md` — full asset register of data files, sources, quality scores, and gaps. Run `python src/data_audit.py` for live audit.
+
+#### 5. Verification Checklist
+See `docs/VERIFICATION_CHECKLIST.md` — mandatory pre-deployment checklist for all model changes.
+
+#### 6. Regime Detection (In Progress)
+Planned: BULL/BEAR/NEUTRAL regime classification based on:
+- Price vs 200-day MA
+- Higher-highs / lower-lows pattern detection
+- Regime-specific signal thresholds (BEAR: 75% confidence required; BULL: 60%)
+
+#### 7. Planned Model Additions (Phase 2)
+- LSTM/GRU for sequential pattern capture
+- XGBoost with walk-forward CV
+- Sentiment layer: Fear & Greed Index (free API)
+- On-chain features: exchange netflow, gas fees (Glassnode free tier)
+
+### Phase Gates for Live Capital (50 USDC Experiment)
+
+| Phase | Requirement | Duration |
+|-------|-------------|---------|
+| Phase 0 | Directional accuracy ≥ 57% in paper trading | 2 weeks min |
+| Phase 1 | Max drawdown < 15% in paper | Gate before live |
+| Live | Sharpe > 0.8 over Phase 0 | Cris + QUANT sign-off |
+
+⚠️ **Disclaimer:** The 50 USDC experiment is a research exercise. This is not financial advice.
