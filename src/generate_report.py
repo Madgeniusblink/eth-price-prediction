@@ -24,6 +24,7 @@ from track_accuracy_enhanced import EnhancedAccuracyTracker
 from auto_retrain import AutoRetrainer
 from health_monitor import HealthMonitor
 from market_filters import MarketFilters, apply_filters_to_signals
+import outcome_logger
 
 # Setup logger
 logger = setup_logger(__name__)
@@ -207,8 +208,57 @@ def run_prediction_pipeline():
         logger.warning(f"Failed to record prediction: {e}")
         print(f"⚠ Warning: Could not record prediction: {e}")
     
+    # Step 5b: Outcome Logger — validate past + log new predictions + print summary
+    print("Step 5b: Outcome Logger — validating past predictions and logging new ones...")
+    try:
+        now = datetime.now(timezone.utc)
+
+        # Re-fetch current price if not already available
+        try:
+            from fetch_data import fetch_current_price as _fcp
+            _current_price = _fcp()
+        except Exception:
+            _current_price = None
+
+        if _current_price:
+            _validated = outcome_logger.validate_past_predictions(_current_price, now)
+            if _validated:
+                print(f"  ✓ Validated {_validated} past prediction(s)")
+
+        # Log new predictions
+        pred_file = os.path.join(BASE_DIR, 'predictions_summary.json')
+        if os.path.exists(pred_file):
+            with open(pred_file, 'r') as _f:
+                _preds = json.load(_f)
+            for _horizon, _pred_info in (_preds.get('predictions', {}) or {}).items():
+                try:
+                    _minutes = int(_horizon.replace('min', '').replace('m', ''))
+                    _target = now + __import__('datetime').timedelta(minutes=_minutes)
+                except Exception:
+                    _target = now
+
+                outcome_logger.log_prediction({
+                    "timestamp_made": now,
+                    "target_time": _target,
+                    "predicted_price": _pred_info.get('price') or _pred_info.get('predicted_price'),
+                    "confidence": _pred_info.get('confidence'),
+                    "model_weights": _pred_info.get('model_weights', {}),
+                })
+            print(f"  ✓ Logged {len(_preds.get('predictions', {}))} new prediction(s)")
+
+        # Print accuracy summary
+        _summary = outcome_logger.get_accuracy_summary()
+        print(f"  📊 Accuracy Summary: {_summary['validated_count']}/{_summary['total_predictions']} validated"
+              f" | 7d dir accuracy: {(_summary['directional_accuracy_7d'] or 0)*100:.1f}%"
+              f" | avg pct error: {_summary['avg_pct_error'] or 0:.2f}%"
+              f" | sharpe: {_summary['sharpe_ratio'] or 0:.2f}")
+        logger.info(f"Outcome logger summary: {_summary}")
+    except Exception as e:
+        logger.warning(f"Outcome logger step failed: {e}")
+        print(f"  ⚠ Outcome logger warning: {e}")
+
     print()
-    
+
     return True
 
 def generate_trading_signals():
