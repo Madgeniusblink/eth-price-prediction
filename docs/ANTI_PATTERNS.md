@@ -179,3 +179,46 @@ GitHub Actions disables scheduled workflows for repositories with no pushes in 6
 
 ### Lesson
 **Scheduled workflows require repo activity to keep firing.** Verify with `gh api repos/org/repo/actions/runs` — if run count is low relative to schedule frequency, the cron is suppressed.
+
+---
+
+## AP-006: Rate Limit Violations on Data APIs
+
+**Status:** ACTIVE CONSTRAINT — never violate
+**Severity:** CRITICAL — IP bans kill the pipeline permanently
+
+### Rate Limits by Source
+
+| API | Limit | Safe Interval | Notes |
+|-----|-------|---------------|-------|
+| **Kraken OHLC** | 1 req/sec | 1.5s between calls | 720 candles/call max |
+| **CoinGecko (free)** | 10-50 req/min | 3s between calls | No key required |
+| **Alternative.me Fear & Greed** | ~10 req/min | 10s between calls | Historical: 1 day per call |
+| **Etherscan Gas API** | 5 req/sec (free) | 0.5s between calls | Free tier: 5/s |
+| **Binance** | N/A — geo-blocked | Do not use | Blocked from this host |
+
+### Rules (Mandatory)
+1. **Always `time.sleep()` between paginated API calls** — minimum intervals above
+2. **Implement exponential backoff** on 429/503: start at 5s, double up to 60s, max 3 retries
+3. **Cache responses locally** — never fetch the same data twice in one pipeline run
+4. **Never fetch in a tight loop** — all batch fetches must have sleep between iterations
+5. **Log every API call** with timestamp — makes rate limit debugging easy
+
+### Pattern: Safe Paginated Fetch
+```python
+import time
+
+RATE_LIMIT_SLEEP = 1.5  # seconds between calls
+
+for batch in range(max_batches):
+    response = requests.get(url, params=params, timeout=15)
+    if response.status_code == 429:
+        print("Rate limited — backing off 30s")
+        time.sleep(30)
+        continue
+    process(response)
+    time.sleep(RATE_LIMIT_SLEEP)  # ALWAYS sleep between calls
+```
+
+### Lesson
+Binance is geo-blocked from this host. Kraken is the primary data source. Be respectful to free APIs — an IP ban means zero data.

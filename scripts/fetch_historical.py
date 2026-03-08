@@ -58,8 +58,8 @@ def fetch_all() -> pd.DataFrame:
         current_start = batch[-1][6] + 1  # close_time + 1 ms → next candle
         print(f"  fetched {len(all_rows):,} rows so far…", end="\r")
 
-        # Respect Binance rate limits (1200 req/min = 1 req/50ms)
-        time.sleep(0.05)
+        # Kraken rate limit: 1 req/sec — use 1.5s to be safe (AP-006)
+        time.sleep(1.5)
 
     print()  # newline after \r progress
     return pd.DataFrame(all_rows, columns=_COLUMNS)
@@ -99,3 +99,8 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+# ===== RATE LIMIT NOTES =====
+# Kraken OHLC: max 720 candles/call, 1 req/sec limit
+# Always sleep 1.5s between calls (see AP-006 in docs/ANTI_PATTERNS.md)
+# On 429: back off 30s before retry
