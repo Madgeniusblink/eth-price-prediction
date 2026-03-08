@@ -1,63 +1,79 @@
 {
-  "generated_at": "2026-03-07T20:14:54.726180",
+  "generated_at": "2026-03-08T13:26:41.632653",
+  "model": "MeanReversion+RSI14+RegimeDetection_200MA",
   "total_predictions": 420,
-  "directional_accuracy_pct": 51.43,
-  "win_rate_pct": 51.43,
-  "rmse": 71.4191,
-  "mae": 53.9134,
-  "sharpe_ratio": 23.697,
+  "directional_accuracy_pct": 53.57,
+  "win_rate_pct": 53.57,
+  "rmse": 22.5728,
+  "mae": 14.8871,
+  "sharpe_ratio": -3.2284,
   "train_size": 300,
   "forecast_horizon": 1,
+  "regime_accuracy": {
+    "bull": 56.4,
+    "neutral": 56.2,
+    "bear": 51.1
+  },
   "gate_pass": {
     "directional_accuracy": false,
-    "sharpe_ratio": true,
+    "sharpe_ratio": false,
     "overall": false
   },
   "results_sample": [
     {
       "step": 300,
       "train_end_price": 1973.43,
-      "predicted_price": 1986.0515467112596,
-      "actual_price": 1985.17,
-      "predicted_direction": 1,
-      "actual_direction": 1,
-      "correct": true
+      "predicted_price": 1971.45657,
+      "actual_price": 1971.0,
+      "predicted_direction": -1,
+      "actual_direction": -1,
+      "correct": true,
+      "regime": -1,
+      "rsi": 39.6
     },
     {
       "step": 301,
       "train_end_price": 1985.17,
-      "predicted_price": 1984.7880746934225,
-      "actual_price": 1971.0,
+      "predicted_price": 1983.1848300000001,
+      "actual_price": 1973.19,
       "predicted_direction": -1,
       "actual_direction": -1,
-      "correct": true
+      "correct": true,
+      "regime": -1,
+      "rsi": 39.0
     },
     {
       "step": 302,
       "train_end_price": 1971.0,
-      "predicted_price": 1983.4454985507246,
-      "actual_price": 1973.19,
+      "predicted_price": 1972.9709999999998,
+      "actual_price": 1952.0,
       "predicted_direction": 1,
-      "actual_direction": 1,
-      "correct": true
+      "actual_direction": -1,
+      "correct": false,
+      "regime": -1,
+      "rsi": 36.5
     },
     {
       "step": 303,
       "train_end_price": 1973.19,
-      "predicted_price": 1982.4618171683394,
-      "actual_price": 1952.0,
+      "predicted_price": 1975.1631899999998,
+      "actual_price": 1940.4,
       "predicted_direction": 1,
       "actual_direction": -1,
-      "correct": false
+      "correct": false,
+      "regime": -1,
+      "rsi": 32.9
     },
     {
       "step": 304,
       "train_end_price": 1952.0,
-      "predicted_price": 1980.8573348940913,
-      "actual_price": 1940.4,
+      "predicted_price": 1953.9519999999998,
+      "actual_price": 1938.85,
       "predicted_direction": 1,
       "actual_direction": -1,
-      "correct": false
+      "correct": false,
+      "regime": -1,
+      "rsi": 32.2
     }
   ]
 }

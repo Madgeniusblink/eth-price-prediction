@@ -46,18 +46,20 @@ def main():
             print("⚠️  Used fallback latest_prediction.json (report source missing)")
 
         # Step 3: Run walk-forward backtest (non-blocking — log results, don't fail)
-        print("📈 Running walk-forward backtest...")
+        print("📈 Running walk-forward backtest…")
         bt_result = subprocess.run(
             [sys.executable, "-c",
-             "import sys; sys.path.insert(0,'src'); "
+             "import sys, os; sys.path.insert(0,'src'); "
              "from validate import walk_forward_backtest; "
              "import pandas as pd; "
-             "df = pd.read_csv('eth_1m_data.csv'); "
+             # Prefer 1-hour Kraken historical data; fall back to legacy filename
+             "csv = 'data/eth_1h_historical_6mo.csv' if os.path.exists('data/eth_1h_historical_6mo.csv') else 'eth_1m_data.csv'; "
+             "df = pd.read_csv(csv); "
              "df.columns = [c.lower() for c in df.columns]; "
              "res = walk_forward_backtest(df); "
              "import json; open('data/backtest_results.json','w').write(json.dumps(res, indent=2)); "
-             "print('Backtest complete:', res.get('directional_accuracy', 'N/A'))"],
-            capture_output=True, text=True, timeout=120
+             "print('Backtest complete:', res.get('directional_accuracy_pct', 'N/A'))"],
+            capture_output=True, text=True, timeout=300
         )
         if bt_result.returncode == 0:
             print(f"✅ Backtest: {bt_result.stdout.strip()}")

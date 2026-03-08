@@ -343,122 +343,194 @@ def main():
     else:
         print("✗ Sharpe Ratio: FAIL (<0.5)")
 
+def _compute_rsi(prices: np.ndarray, period: int = 14) -> float:
+    """Compute RSI for the last `period` bars of prices (no look-ahead)."""
+    if len(prices) < period + 1:
+        return 50.0
+    diffs = np.diff(prices[-(period + 1):])
+    gains  = diffs[diffs > 0]
+    losses = -diffs[diffs < 0]
+    avg_g = gains.mean()  if len(gains)  > 0 else 0.0
+    avg_l = losses.mean() if len(losses) > 0 else 0.0
+    if avg_l == 0:
+        return 100.0
+    rs = avg_g / avg_l
+    return float(100.0 - 100.0 / (1.0 + rs))
+
+
+def _regime_accuracy(results: list, regime_val: int):
+    """Return directional accuracy % for a specific regime value (or None if empty)."""
+    subset = [r for r in results if r.get("regime") == regime_val]
+    if not subset:
+        return None
+    return round(sum(r["correct"] for r in subset) / len(subset) * 100, 1)
+
+
 def walk_forward_backtest(df, train_size=300, step=1, forecast_horizon=1):
     """
-    Walk-forward backtest — the correct way to validate time series models.
+    Walk-forward backtest with regime detection and mean-reversion ensemble.
 
-    NO data leakage: training window always precedes test point chronologically.
-    Primary metric: directional accuracy (not R²).
+    IMPROVEMENT 2026-03-08: Regime Detection + Mean-Reversion Ensemble
+    ───────────────────────────────────────────────────────────────────
+    Root-cause of the 51.4% baseline: LinearRegression extrapolates recent trend,
+    creating a bullish bias — but this market is MEAN-REVERTING (direction
+    continuation = 46.3%).  Correct model class = mean-reversion + oscillator.
+
+    Signal stack (vote ensemble, no model training required):
+      1. 1h  mean-reversion  (×2 weight — primary)
+      2. 2h  mean-reversion  (×1 weight — confirmation)
+      3. RSI-14 extreme      (×1 weight — overbought/oversold; neutral = abstain)
+      4. 200-MA regime       (×1 weight — BULL/BEAR contrarian dampener)
+
+    Regime classification (200-period MA):
+      BULL  price > MA × 1.005 →  regime = +1
+      BEAR  price < MA × 0.995 →  regime = -1
+      NEUTRAL                   →  regime =  0
+
+    NO data leakage: all signals computed from train window only.
+    Primary metric: directional accuracy (gate ≥ 57%).
 
     Args:
-        df: DataFrame with 'close' column and datetime index/timestamps
-        train_size: Number of candles in each training window
-        step: Number of candles to advance per iteration
-        forecast_horizon: Steps ahead to predict (1 = next candle)
+        df              : DataFrame with 'close' column
+        train_size      : Candles in training window  (default 300)
+        step            : Walk-forward step size       (default 1)
+        forecast_horizon: Periods ahead to predict     (default 1)
 
     Returns:
-        dict: {
-            total_predictions, directional_accuracy_pct, win_rate,
-            rmse, mae, sharpe_ratio, results (list of per-step results)
-        }
+        dict with directional_accuracy_pct, sharpe_ratio, gate_pass, …
     """
-    from sklearn.linear_model import LinearRegression
-
     prices = df['close'].values if hasattr(df['close'], 'values') else np.array(df['close'])
+    n = len(prices)
 
-    if len(prices) < train_size + forecast_horizon + 10:
+    if n < train_size + forecast_horizon + 10:
         raise ValueError(
-            f"Insufficient data for walk-forward backtest. "
-            f"Need {train_size + forecast_horizon + 10} rows, got {len(prices)}."
+            f"Insufficient data. Need {train_size + forecast_horizon + 10} rows, got {n}."
         )
 
-    predictions = []
-    actuals = []
     results = []
+    end = n - forecast_horizon
 
-    end = len(prices) - forecast_horizon
     for i in range(train_size, end, step):
-        train = prices[i - train_size:i]
-        actual = prices[i + forecast_horizon - 1]
+        train         = prices[i - train_size: i]
+        current_price = float(train[-1])
+        actual_price  = float(prices[i + forecast_horizon])
+        actual_dir    = 1 if actual_price > current_price else -1
 
-        # Simple linear model on training window (baseline)
-        X_train = np.arange(len(train)).reshape(-1, 1)
-        y_train = train
-        model = LinearRegression()
-        model.fit(X_train, y_train)
-        pred = model.predict([[len(train) + forecast_horizon - 1]])[0]
+        # ── Regime detection (200-period MA) ─────────────────────────────
+        period_200 = min(200, len(train))
+        ma_200     = float(np.mean(train[-period_200:]))
+        if current_price > ma_200 * 1.005:
+            regime = 1    # BULL
+        elif current_price < ma_200 * 0.995:
+            regime = -1   # BEAR
+        else:
+            regime = 0    # NEUTRAL
 
-        predictions.append(pred)
-        actuals.append(actual)
+        # ── RSI-14 signal ────────────────────────────────────────────────
+        rsi = _compute_rsi(train, period=14)
+        if rsi >= 65:
+            rsi_sig = -1   # overbought → expect DOWN
+        elif rsi <= 35:
+            rsi_sig =  1   # oversold   → expect UP
+        else:
+            rsi_sig =  0   # neutral    → abstain
 
-        pred_direction = 1 if pred > train[-1] else -1
-        actual_direction = 1 if actual > train[-1] else -1
+        # ── Mean-reversion signals ────────────────────────────────────────
+        mr1 = -1 if (train[-1] > train[-2]) else 1   # 1h  MR (double weight)
+        mr2 = -1 if (train[-1] > train[-3]) else 1   # 2h  MR
+
+        # ── Vote ensemble ─────────────────────────────────────────────────
+        # MR1 gets ×2, MR2 ×1, RSI ×1 (if not neutral), regime ×1 (contrarian)
+        votes = [mr1, mr1, mr2]
+        if rsi_sig != 0:
+            votes.append(rsi_sig)
+        if regime != 0:
+            # In BULL: adds -1 (slight DOWN bias via contrarian mean-reversion)
+            # In BEAR: adds +1 (slight UP  bias via contrarian mean-reversion)
+            votes.append(-regime)
+
+        pred_dir   = 1 if sum(votes) > 0 else -1
+        pred_price = current_price * (1.001 if pred_dir == 1 else 0.999)
 
         results.append({
-            "step": i,
-            "train_end_price": float(train[-1]),
-            "predicted_price": float(pred),
-            "actual_price": float(actual),
-            "predicted_direction": pred_direction,
-            "actual_direction": actual_direction,
-            "correct": pred_direction == actual_direction,
+            "step":               i,
+            "train_end_price":    current_price,
+            "predicted_price":    pred_price,
+            "actual_price":       actual_price,
+            "predicted_direction": pred_dir,
+            "actual_direction":   actual_dir,
+            "correct":            pred_dir == actual_dir,
+            "regime":             regime,
+            "rsi":                round(rsi, 1),
         })
 
-    predictions = np.array(predictions)
-    actuals = np.array(actuals)
-
-    # Directional accuracy
+    # ── Aggregate metrics ─────────────────────────────────────────────────
+    total   = len(results)
     correct = sum(r["correct"] for r in results)
-    total = len(results)
-    directional_accuracy = (correct / total * 100) if total > 0 else 0
+    directional_accuracy = (correct / total * 100) if total > 0 else 0.0
 
-    # RMSE / MAE
+    predictions = np.array([r["predicted_price"] for r in results])
+    actuals     = np.array([r["actual_price"]     for r in results])
     rmse = float(np.sqrt(np.mean((predictions - actuals) ** 2)))
-    mae = float(np.mean(np.abs(predictions - actuals)))
+    mae  = float(np.mean(np.abs(predictions - actuals)))
 
-    # Simulated returns (buy on up-prediction, sell on down-prediction)
-    actual_returns = np.diff(actuals) / actuals[:-1]
-    pred_directions = np.array([r["predicted_direction"] for r in results[:-1]])
-    strategy_returns = pred_directions * actual_returns
+    # Simulated strategy: long (+1) / short (-1) on each prediction
+    actual_rets = np.array([
+        (r["actual_price"] - r["train_end_price"]) / max(r["train_end_price"], 1e-10)
+        for r in results
+    ])
+    strat_rets  = np.array([r["predicted_direction"] for r in results]) * actual_rets
 
     sharpe = 0.0
-    if len(strategy_returns) > 1 and strategy_returns.std() > 0:
-        sharpe = float((strategy_returns.mean() / strategy_returns.std()) * np.sqrt(252 * 24 * 60))
+    if len(strat_rets) > 1 and strat_rets.std() > 0:
+        # Annualise for 1-hour candles: √(24 × 365) ≈ √8760
+        sharpe = float((strat_rets.mean() / strat_rets.std()) * np.sqrt(8760))
 
-    win_rate = directional_accuracy  # same for long-only strategy
+    # Regime breakdown
+    bull_acc = _regime_accuracy(results,  1)
+    neut_acc = _regime_accuracy(results,  0)
+    bear_acc = _regime_accuracy(results, -1)
 
     summary = {
-        "generated_at": datetime.now().isoformat(),
-        "total_predictions": total,
+        "generated_at":           datetime.now().isoformat(),
+        "model":                  "MeanReversion+RSI14+RegimeDetection_200MA",
+        "total_predictions":      total,
         "directional_accuracy_pct": round(directional_accuracy, 2),
-        "win_rate_pct": round(win_rate, 2),
-        "rmse": round(rmse, 4),
-        "mae": round(mae, 4),
-        "sharpe_ratio": round(sharpe, 4),
-        "train_size": train_size,
-        "forecast_horizon": forecast_horizon,
+        "win_rate_pct":           round(directional_accuracy, 2),
+        "rmse":                   round(rmse, 4),
+        "mae":                    round(mae,  4),
+        "sharpe_ratio":           round(sharpe, 4),
+        "train_size":             train_size,
+        "forecast_horizon":       forecast_horizon,
+        "regime_accuracy": {
+            "bull":    bull_acc,
+            "neutral": neut_acc,
+            "bear":    bear_acc,
+        },
         "gate_pass": {
             "directional_accuracy": directional_accuracy >= 57.0,
-            "sharpe_ratio": sharpe >= 0.5,
-            "overall": directional_accuracy >= 57.0 and sharpe >= 0.5,
+            "sharpe_ratio":         sharpe >= 0.5,
+            "overall":              directional_accuracy >= 57.0 and sharpe >= 0.5,
         },
-        "results_sample": results[:5],  # First 5 for debugging
+        "results_sample": results[:5],
     }
 
-    # Save to file
+    # Persist
     output_path = Path(BASE_DIR) / "data" / "backtest_results.json"
     output_path.parent.mkdir(exist_ok=True)
     with open(output_path, "w") as f:
         json.dump(summary, f, indent=2)
 
-    print(f"\n=== Walk-Forward Backtest Results ===")
-    print(f"  Total predictions: {total}")
-    print(f"  Directional accuracy: {directional_accuracy:.1f}% (gate: ≥57%)")
-    print(f"  RMSE: ${rmse:.4f}")
-    print(f"  Sharpe ratio: {sharpe:.4f} (gate: ≥0.5)")
+    print(f"\n=== Walk-Forward Backtest (Regime Detection) ===")
+    print(f"  Model:               MeanReversion + RSI14 + 200MA Regime")
+    print(f"  Total predictions:   {total}")
+    print(f"  Directional acc:     {directional_accuracy:.2f}%  (gate ≥57%)")
+    print(f"  Regime accuracy:     BULL={bull_acc}%  NEUTRAL={neut_acc}%  BEAR={bear_acc}%")
+    print(f"  RMSE:                ${rmse:.4f}")
+    print(f"  Sharpe ratio:        {sharpe:.4f}  (gate ≥0.5)")
     gate = "✅ PASS" if summary["gate_pass"]["overall"] else "❌ FAIL"
-    print(f"  Gate: {gate}")
-    print(f"  Results saved to: {output_path}")
+    print(f"  Gate:                {gate}")
+    print(f"  Results saved →      {output_path}")
 
     return summary
 
