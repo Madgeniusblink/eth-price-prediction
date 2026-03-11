@@ -106,3 +106,58 @@ Cumulative progress from baseline: **51.4% → 53.57% → 54.52%** (+3.12pp tota
 4. Gate target: **57% directional accuracy**.
 
 ---
+
+---
+
+## 2026-03-11 — XGBoost Volume-Aware Regime Flipper
+
+**Cycle:** QUANT daily self-improvement (Wednesday 2026-03-11, ~15:15 UTC)
+
+### Problem diagnosed
+Previous ensemble (MR + RSI14 + RegimeDetection + FearGreed) achieved **54.52%**
+directional accuracy but **Sharpe -2.77** — losing money despite above-chance accuracy.
+
+Root cause: **Return asymmetry**. Mean-reversion predicts UP after large down moves and
+DOWN after large up moves. High-volume moves (large in magnitude) tend to CONTINUE in
+their direction — the mean-reversion model fights the trend and loses big on these bars.
+
+Volume analysis on 705 candles (2026-03-11):
+| Volume Regime       | Candles | Continuation rate | MR accuracy |
+|--------------------|---------|-------------------|-------------|
+| High vol (>1.6×)   |   77    | 61.0%             | **39.0%** (badly wrong) |
+| Low/mid vol (≤1.6×)|  343    | 46.6%             | 53.4%       |
+
+### Change implemented
+**`src/validate.py` — XGBoost volume-aware MR flipper:**
+
+1. **Added XGBoost infrastructure** — `_build_xgb_features()` (10 features: RSI,
+   momentum 1/2/4/8h, regime, vol ratio, realised vol, candle body, MA50 ratio)
+   and `_train_xgb_model()` (XGBClassifier, max_depth=3, retrained every 12 steps).
+
+2. **Volume-aware regime flip**: When `vol_ratio > 1.6` AND in a trending regime
+   (BULL/BEAR based on 200-MA), flip MR signals to trend-following. In NEUTRAL,
+   mean-reversion is preserved (62.5% accuracy — highest regime).
+
+3. **XGBoost confirmation gate**: XGBoost (prob threshold 0.60/0.40) can confirm
+   ensemble direction; it is never allowed to oppose (prevents MR signal corruption).
+
+4. **`requirements.txt`**: Added `xgboost>=1.7.0`
+
+### Results
+
+| Metric              | Before (2026-03-10) | After (2026-03-11) | Change  |
+|---------------------|--------------------|--------------------|---------|
+| Directional Acc     | 54.52%             | **57.38%**         | +2.86pp |
+| Sharpe Ratio        | -2.7655            | **+7.4691**        | +10.2   |
+| BULL regime acc     | 57.1%              | **60.1%**          | +3.0pp  |
+| NEUTRAL regime acc  | 62.5%              | **62.5%**          | 0       |
+| BEAR regime acc     | 51.6%              | **54.7%**          | +3.1pp  |
+| Gate (acc ≥57%)     | ❌ FAIL            | ✅ **PASS**        |         |
+| Gate (sharpe ≥0.5)  | ❌ FAIL            | ✅ **PASS**        |         |
+| Overall gate        | ❌ FAIL            | ✅ **PASS**        |         |
+
+### Next improvement candidates
+- [ ] Tune Random Forest hyperparameters via grid search on walk-forward CV
+- [ ] Add on-chain gas fee feature (Etherscan free API)
+- [ ] Add LSTM model (tensorflow)
+- [ ] XGBoost: expand training data as live pipeline accumulates 6+ months of data
