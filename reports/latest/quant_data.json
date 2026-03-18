@@ -1,39 +1,43 @@
 {
-  "spot": {},
+  "spot": {
+    "price": 2330.74,
+    "change_24h": -1.1196364965146934,
+    "volume_24h": 23001512722.316525
+  },
   "regime": {
     "regime": "MEDIUM",
-    "vol_1h_pct": 48.36,
-    "vol_4h_pct": 42.01,
-    "vol_24h_pct": 59.6,
-    "primary_vol_pct": 59.6,
-    "atr": 1.93,
-    "timestamp": "2026-03-18T00:42:46.217996"
+    "vol_1h_pct": 46.8,
+    "vol_4h_pct": 44.54,
+    "vol_24h_pct": 58.12,
+    "primary_vol_pct": 58.12,
+    "atr": 1.92,
+    "timestamp": "2026-03-18T01:41:24.276533"
   },
   "lp": {
     "regime": "MEDIUM",
     "range_pct": 10.0,
-    "lower_price": 2079.3,
-    "upper_price": 2541.36,
+    "lower_price": 2097.67,
+    "upper_price": 2563.81,
     "recommendation": "ADD_LIQUIDITY",
     "il_at_boundary_pct": -0.11,
-    "fee_apy": 119.9,
-    "net_expected_return_pct": 119.8,
-    "tvl_used": 2282.9,
-    "current_price": 2310.33,
-    "timestamp": "2026-03-18T00:42:46.218159"
+    "fee_apy": 1368.8,
+    "net_expected_return_pct": 1368.7,
+    "tvl_used": 200.0,
+    "current_price": 2330.74,
+    "timestamp": "2026-03-18T01:41:24.276556"
   },
   "strength": {
-    "score": 55,
-    "signal": "BUY",
-    "raw_signal": "BUY",
+    "score": 50,
+    "signal": "WAIT",
+    "raw_signal": "WAIT",
     "regime_filtered": false,
     "components": {
-      "rsi": 0,
-      "macd": 20,
+      "rsi": 10,
+      "macd": 5,
       "bb": 10,
       "volume": 10,
       "regime": 15
     },
-    "sushiswap_context": "ETH/USDC \u2014 consider LP entry if range stable; ETH/WBTC \u2014 monitor BTC correlation"
+    "sushiswap_context": "ETH/USDC \u2014 hold current positions; monitor funding rate"
   }
 }
