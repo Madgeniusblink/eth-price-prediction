@@ -18,6 +18,7 @@ from config import BASE_DIR
 from track_accuracy_enhanced import EnhancedAccuracyTracker
 from market_conditions import MarketConditionDetector
 from model_manager import ModelManager
+from fetch_data import fetch_current_price
 
 warnings.filterwarnings('ignore')
 
@@ -495,7 +496,9 @@ def make_predictions_with_rl(df, enable_rl=True, onchain_data=None):
         
         # Validate past predictions
         current_time = datetime.now(timezone.utc)
-        current_price = df['close'].iloc[-1]
+        # Use live price for validation accuracy; fall back to last CSV close if fetch fails
+        _live = fetch_current_price()
+        current_price = _live if _live else df['close'].iloc[-1]
         validated_count = accuracy_tracker.validate_predictions(current_time, current_price)
         
         if validated_count > 0:
@@ -513,8 +516,19 @@ def make_predictions_with_rl(df, enable_rl=True, onchain_data=None):
     
     predictions = {}
     current_time = datetime.now(timezone.utc)
-    current_price = df['close'].iloc[-1]
-    
+    # Always fetch a fresh live price as the prediction baseline.
+    # The last CSV close can be stale if ETH moved significantly since the
+    # data file was written. Fall back to df close only if all live sources fail.
+    _live_price = fetch_current_price()
+    current_price = _live_price if _live_price else df['close'].iloc[-1]
+    csv_price = df['close'].iloc[-1]
+    price_delta_pct = abs(current_price - csv_price) / csv_price * 100 if csv_price else 0
+    if price_delta_pct > 1.0:
+        print(f"  ⚠ Live price ${current_price:,.2f} differs from CSV close ${csv_price:,.2f}"
+              f" by {price_delta_pct:.1f}% — using live price as baseline")
+    else:
+        print(f"  ✓ Price baseline: ${current_price:,.2f} (live={_live_price is not None})")
+
     for horizon_name, minutes in horizons.items():
         print(f"\n  Predicting {horizon_name}...")
         
