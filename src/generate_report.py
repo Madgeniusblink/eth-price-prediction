@@ -854,25 +854,9 @@ def main():
         except Exception as e:
             logger.warning(f"Could not record health status: {e}")
         
-        # Send success alert with predictions
-        try:
-            # Load predictions and signals for alert
-            pred_file = os.path.join(BASE_DIR, 'predictions_summary.json')
-            signal_file = os.path.join(BASE_DIR, 'trading_signals.json')
-            
-            if os.path.exists(pred_file) and os.path.exists(signal_file):
-                with open(pred_file, 'r') as f:
-                    predictions = json.load(f)
-                with open(signal_file, 'r') as f:
-                    signals = json.load(f)
-                
-                alert_system.send_prediction_alert(
-                    predictions['current_price'],
-                    predictions['predictions'],
-                    signals['trading_signal']
-                )
-        except Exception as e:
-            logger.warning(f"Could not send prediction alert: {e}")
+        # NOTE: Slack notification is handled exclusively by send_slack_notification.py
+        # (called from main.py Step 4). Removed duplicate send_prediction_alert() call
+        # here to prevent double-posting to the channel.
         
         return 0
         
