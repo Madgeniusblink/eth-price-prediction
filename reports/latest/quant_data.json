@@ -2,38 +2,38 @@
   "spot": {},
   "regime": {
     "regime": "LOW",
-    "vol_1h_pct": 37.35,
-    "vol_4h_pct": 27.92,
-    "vol_24h_pct": 23.34,
-    "primary_vol_pct": 23.34,
-    "atr": 0.9,
-    "timestamp": "2026-03-21T15:11:31.394099"
+    "vol_1h_pct": 32.76,
+    "vol_4h_pct": 31.63,
+    "vol_24h_pct": 24.16,
+    "primary_vol_pct": 24.16,
+    "atr": 0.71,
+    "timestamp": "2026-03-21T16:11:50.502183"
   },
   "lp": {
     "regime": "LOW",
     "range_pct": 5.0,
-    "lower_price": 2044.84,
-    "upper_price": 2260.08,
+    "lower_price": 2045.82,
+    "upper_price": 2261.18,
     "recommendation": "ADD_LIQUIDITY",
     "il_at_boundary_pct": -0.03,
     "fee_apy": 240.0,
     "net_expected_return_pct": 240.0,
-    "tvl_used": 2281.4,
-    "current_price": 2152.46,
-    "timestamp": "2026-03-21T15:11:31.394324"
+    "tvl_used": 2281.2,
+    "current_price": 2153.5,
+    "timestamp": "2026-03-21T16:11:50.502348"
   },
   "strength": {
-    "score": 45,
-    "signal": "WAIT",
-    "raw_signal": "WAIT",
+    "score": 57,
+    "signal": "SHORT",
+    "raw_signal": "SHORT",
     "regime_filtered": false,
     "components": {
-      "rsi": 10,
-      "macd": 5,
+      "rsi": 7,
+      "macd": 20,
       "bb": 10,
       "volume": 10,
       "regime": 10
     },
-    "sushiswap_context": "ETH/USDC \u2014 hold current positions; monitor funding rate"
+    "sushiswap_context": "ETH/USDC \u2014 reduce LP exposure; ETH/WBTC \u2014 correlation sell pressure likely"
   }
 }
