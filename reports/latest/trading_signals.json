@@ -50,11 +50,11 @@
       "notes": "Set trade_status to IN_TRADE when you enter a position, OUT_OF_TRADE when you exit"
     },
     "derivatives_data": {
-      "funding_rate": 5.65292012512e-05,
-      "open_interest": 14794106113.882235,
+      "funding_rate": 6.53828679467e-05,
+      "open_interest": 14960270796.353434,
       "long_short_ratio": null,
-      "fear_greed_index": 25,
-      "fear_greed_classification": "Extreme Fear"
+      "fear_greed_index": 30,
+      "fear_greed_classification": "Fear"
     }
   },
   "market_filters": {
@@ -71,11 +71,11 @@
     ]
   },
   "derivatives_context": {
-    "funding_rate": 5.65292012512e-05,
-    "open_interest": 14793872778.421135,
+    "funding_rate": 6.53828679467e-05,
+    "open_interest": 14960583070.549234,
     "long_short_ratio": null,
-    "fear_greed_index": 25,
-    "fear_greed_classification": "Extreme Fear"
+    "fear_greed_index": 30,
+    "fear_greed_classification": "Fear"
   },
   "defi_signals": {
     "uniswap_v3": {
@@ -106,8 +106,8 @@
       "better_protocol": "UNISWAP_V3",
       "better_apy": 0
     },
-    "fear_greed_value": 25,
-    "fear_greed_label": "Extreme Fear",
+    "fear_greed_value": 30,
+    "fear_greed_label": "Fear",
     "gas_gwei": null,
     "gas_label": "LOW",
     "onchain_momentum": "NEUTRAL"
@@ -130,9 +130,13 @@
       "hour_data": []
     },
     "fear_greed": {
-      "value": 25,
-      "label": "Extreme Fear",
+      "value": 30,
+      "label": "Fear",
       "history": [
+        {
+          "value": 30,
+          "label": "Fear"
+        },
         {
           "value": 25,
           "label": "Extreme Fear"
@@ -156,10 +160,6 @@
         {
           "value": 25,
           "label": "Extreme Fear"
-        },
-        {
-          "value": 28,
-          "label": "Fear"
         }
       ]
     },
@@ -168,7 +168,7 @@
       "supply_change": null
     },
     "onchain_momentum": "NEUTRAL",
-    "fetched_at": "2026-05-24T23:28:55.583187Z"
+    "fetched_at": "2026-05-25T01:07:11.955459Z"
   },
   "signal_score": {
     "score": 90,
@@ -185,5 +185,5 @@
     "win_rate": 0.55,
     "win_loss_ratio": 1.5
   },
-  "generated_at": "2026-05-24T23:28:55.851526+00:00"
+  "generated_at": "2026-05-25T01:07:12.261161+00:00"
 }
