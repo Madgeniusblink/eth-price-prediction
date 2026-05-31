@@ -50,11 +50,11 @@
       "notes": "Set trade_status to IN_TRADE when you enter a position, OUT_OF_TRADE when you exit"
     },
     "derivatives_data": {
-      "funding_rate": 4.73053508573e-05,
-      "open_interest": 15671479872.904919,
+      "funding_rate": 5.02589381687e-05,
+      "open_interest": 15754805007.930017,
       "long_short_ratio": null,
-      "fear_greed_index": 23,
-      "fear_greed_classification": "Extreme Fear"
+      "fear_greed_index": 28,
+      "fear_greed_classification": "Fear"
     }
   },
   "market_filters": {
@@ -71,11 +71,11 @@
     ]
   },
   "derivatives_context": {
-    "funding_rate": 4.73053508573e-05,
-    "open_interest": 15671527013.58532,
+    "funding_rate": 5.02589381687e-05,
+    "open_interest": 15754286104.953918,
     "long_short_ratio": null,
-    "fear_greed_index": 23,
-    "fear_greed_classification": "Extreme Fear"
+    "fear_greed_index": 28,
+    "fear_greed_classification": "Fear"
   },
   "defi_signals": {
     "uniswap_v3": {
@@ -106,11 +106,11 @@
       "better_protocol": "UNISWAP_V3",
       "better_apy": 0
     },
-    "fear_greed_value": 23,
-    "fear_greed_label": "Extreme Fear",
+    "fear_greed_value": 28,
+    "fear_greed_label": "Fear",
     "gas_gwei": null,
     "gas_label": "LOW",
-    "onchain_momentum": "BULLISH"
+    "onchain_momentum": "NEUTRAL"
   },
   "onchain_context": {
     "gas": {
@@ -130,9 +130,13 @@
       "hour_data": []
     },
     "fear_greed": {
-      "value": 23,
-      "label": "Extreme Fear",
+      "value": 28,
+      "label": "Fear",
       "history": [
+        {
+          "value": 28,
+          "label": "Fear"
+        },
         {
           "value": 23,
           "label": "Extreme Fear"
@@ -156,10 +160,6 @@
         {
           "value": 30,
           "label": "Fear"
-        },
-        {
-          "value": 25,
-          "label": "Extreme Fear"
         }
       ]
     },
@@ -167,8 +167,8 @@
       "eth_burned_all_time": null,
       "supply_change": null
     },
-    "onchain_momentum": "BULLISH",
-    "fetched_at": "2026-05-30T23:28:54.377851Z"
+    "onchain_momentum": "NEUTRAL",
+    "fetched_at": "2026-05-31T01:10:05.123248Z"
   },
   "signal_score": {
     "score": 90,
@@ -185,5 +185,5 @@
     "win_rate": 0.55,
     "win_loss_ratio": 1.5
   },
-  "generated_at": "2026-05-30T23:28:54.688256+00:00"
+  "generated_at": "2026-05-31T01:10:05.353352+00:00"
 }
