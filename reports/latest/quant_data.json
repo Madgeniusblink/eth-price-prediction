@@ -1,29 +1,29 @@
 {
   "spot": {},
   "regime": {
-    "regime": "HIGH",
-    "vol_1h_pct": 88.1,
-    "vol_4h_pct": 143.87,
-    "vol_24h_pct": 149.39,
-    "primary_vol_pct": 149.39,
-    "atr": 3.48,
-    "timestamp": "2026-06-05T22:33:48.242226"
+    "regime": "EXTREME",
+    "vol_1h_pct": 130.45,
+    "vol_4h_pct": 131.69,
+    "vol_24h_pct": 152.03,
+    "primary_vol_pct": 152.03,
+    "atr": 3.89,
+    "timestamp": "2026-06-05T23:34:27.571456"
   },
   "lp": {
-    "regime": "HIGH",
-    "range_pct": 20.0,
-    "lower_price": 1275.05,
-    "upper_price": 1912.57,
-    "recommendation": "HOLD",
-    "il_at_boundary_pct": -0.41,
-    "fee_apy": 70.0,
-    "net_expected_return_pct": 69.6,
-    "tvl_used": 1956.2,
-    "current_price": 1593.81,
-    "timestamp": "2026-06-05T22:33:48.242424"
+    "regime": "EXTREME",
+    "range_pct": 35.0,
+    "lower_price": 1018.07,
+    "upper_price": 2114.45,
+    "recommendation": "AVOID",
+    "note": "EXTREME volatility \u2014 LP positions likely to suffer heavy IL. Avoid.",
+    "fee_apy": 0.0,
+    "il_at_boundary_pct": 0.0,
+    "net_expected_return_pct": 0.0,
+    "current_price": 1566.26,
+    "timestamp": "2026-06-05T23:34:27.571618"
   },
   "strength": {
-    "score": 43,
+    "score": 35,
     "signal": "WAIT",
     "raw_signal": "WAIT",
     "regime_filtered": false,
@@ -32,7 +32,7 @@
       "macd": 5,
       "bb": 10,
       "volume": 10,
-      "regime": 8
+      "regime": 0
     },
     "sushiswap_context": "ETH/USDC \u2014 hold current positions; monitor funding rate"
   }
