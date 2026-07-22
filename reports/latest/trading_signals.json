@@ -50,11 +50,11 @@
       "notes": "Set trade_status to IN_TRADE when you enter a position, OUT_OF_TRADE when you exit"
     },
     "derivatives_data": {
-      "funding_rate": -3.02576140418e-05,
-      "open_interest": 14683959456.793049,
+      "funding_rate": -4.9901426666e-05,
+      "open_interest": 14868724206.07014,
       "long_short_ratio": null,
-      "fear_greed_index": 25,
-      "fear_greed_classification": "Extreme Fear"
+      "fear_greed_index": 33,
+      "fear_greed_classification": "Fear"
     }
   },
   "market_filters": {
@@ -71,11 +71,11 @@
     ]
   },
   "derivatives_context": {
-    "funding_rate": -3.02576140418e-05,
-    "open_interest": 14681523220.16905,
+    "funding_rate": -4.9901426666e-05,
+    "open_interest": 14868801266.45504,
     "long_short_ratio": null,
-    "fear_greed_index": 25,
-    "fear_greed_classification": "Extreme Fear"
+    "fear_greed_index": 33,
+    "fear_greed_classification": "Fear"
   },
   "defi_signals": {
     "uniswap_v3": {
@@ -106,8 +106,8 @@
       "better_protocol": "UNISWAP_V3",
       "better_apy": 0
     },
-    "fear_greed_value": 25,
-    "fear_greed_label": "Extreme Fear",
+    "fear_greed_value": 33,
+    "fear_greed_label": "Fear",
     "gas_gwei": null,
     "gas_label": "LOW",
     "onchain_momentum": "NEUTRAL"
@@ -130,9 +130,13 @@
       "hour_data": []
     },
     "fear_greed": {
-      "value": 25,
-      "label": "Extreme Fear",
+      "value": 33,
+      "label": "Fear",
       "history": [
+        {
+          "value": 33,
+          "label": "Fear"
+        },
         {
           "value": 25,
           "label": "Extreme Fear"
@@ -156,10 +160,6 @@
         {
           "value": 25,
           "label": "Extreme Fear"
-        },
-        {
-          "value": 25,
-          "label": "Extreme Fear"
         }
       ]
     },
@@ -168,7 +168,7 @@
       "supply_change": null
     },
     "onchain_momentum": "NEUTRAL",
-    "fetched_at": "2026-07-21T23:59:16.551306Z"
+    "fetched_at": "2026-07-22T03:34:48.048048Z"
   },
   "signal_score": {
     "score": 90,
@@ -185,5 +185,5 @@
     "win_rate": 0.55,
     "win_loss_ratio": 1.5
   },
-  "generated_at": "2026-07-21T23:59:16.791976+00:00"
+  "generated_at": "2026-07-22T03:34:48.281908+00:00"
 }
