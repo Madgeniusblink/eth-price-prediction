@@ -1,21 +1,21 @@
 {
-  "timestamp": "2026-08-16T21:25:39.303671+00:00",
-  "current_price": 1879.47,
+  "timestamp": "2026-08-16T22:26:26.220479+00:00",
+  "current_price": 1874.91,
   "predictions": {
     "15min": {
-      "timestamp": "2026-08-16T21:40:39.303671+00:00",
-      "price": 1879.4752242274362,
-      "change_pct": 0.00027796279994900394,
-      "confidence_band": 1.63,
+      "timestamp": "2026-08-16T22:41:26.220479+00:00",
+      "price": 1880.537024716109,
+      "change_pct": 0.3001223907338999,
+      "confidence_band": 4.77,
       "models": {
-        "linear": 1878.447562556256,
-        "polynomial": 1875.6143904613152,
-        "random_forest": 1879.336700000001,
-        "boosted": 1879.8177781178297
+        "linear": 1870.9336221422145,
+        "polynomial": 1874.0794213135484,
+        "random_forest": 1874.5924410714294,
+        "boosted": 1883.7381589074073
       },
       "boosted_metrics": {
-        "rmse": 0.7582,
-        "directional_accuracy": 42.31,
+        "rmse": 4.0641,
+        "directional_accuracy": 40.38,
         "train_size": 487,
         "test_size": 105,
         "models": [
@@ -23,15 +23,15 @@
           "xgb"
         ],
         "feature_importance": {
-          "close": 624.0,
-          "volume": 161.0,
-          "RSI": 125.0,
-          "MACD": 198.0,
-          "bb_position": 100.0,
-          "obv": 253.0,
-          "stoch_rsi": 121.0,
-          "vwap_distance": 72.0,
-          "atr_14": 198.0,
+          "close": 567.0,
+          "volume": 99.0,
+          "RSI": 132.0,
+          "MACD": 140.0,
+          "bb_position": 59.0,
+          "obv": 212.0,
+          "stoch_rsi": 87.0,
+          "vwap_distance": 100.0,
+          "atr_14": 109.0,
           "gas_price": 0.0,
           "fear_greed": 0.0
         }
@@ -45,19 +45,19 @@
       "weight_source": "boosted_ensemble"
     },
     "30min": {
-      "timestamp": "2026-08-16T21:55:39.303671+00:00",
-      "price": 1879.2379836783814,
-      "change_pct": -0.012344773878733374,
-      "confidence_band": 2.76,
+      "timestamp": "2026-08-16T22:56:26.220479+00:00",
+      "price": 1880.1936946080982,
+      "change_pct": 0.2818105726727219,
+      "confidence_band": 5.11,
       "models": {
-        "linear": 1877.4986003600363,
-        "polynomial": 1872.8260379058918,
-        "random_forest": 1879.336700000001,
-        "boosted": 1879.8177781178297
+        "linear": 1869.5603017101712,
+        "polynomial": 1874.748459225383,
+        "random_forest": 1874.5924410714294,
+        "boosted": 1883.7381589074073
       },
       "boosted_metrics": {
-        "rmse": 0.7582,
-        "directional_accuracy": 42.31,
+        "rmse": 4.0641,
+        "directional_accuracy": 40.38,
         "train_size": 487,
         "test_size": 105,
         "models": [
@@ -65,15 +65,15 @@
           "xgb"
         ],
         "feature_importance": {
-          "close": 624.0,
-          "volume": 161.0,
-          "RSI": 125.0,
-          "MACD": 198.0,
-          "bb_position": 100.0,
-          "obv": 253.0,
-          "stoch_rsi": 121.0,
-          "vwap_distance": 72.0,
-          "atr_14": 198.0,
+          "close": 567.0,
+          "volume": 99.0,
+          "RSI": 132.0,
+          "MACD": 140.0,
+          "bb_position": 59.0,
+          "obv": 212.0,
+          "stoch_rsi": 87.0,
+          "vwap_distance": 100.0,
+          "atr_14": 109.0,
           "gas_price": 0.0,
           "fear_greed": 0.0
         }
@@ -87,19 +87,19 @@
       "weight_source": "boosted_ensemble"
     },
     "60min": {
-      "timestamp": "2026-08-16T22:25:39.303671+00:00",
-      "price": 1878.7635025802715,
-      "change_pct": -0.037590247236110236,
-      "confidence_band": 5.51,
+      "timestamp": "2026-08-16T23:26:26.220479+00:00",
+      "price": 1879.5070343920765,
+      "change_pct": 0.2451869365503659,
+      "confidence_band": 6.07,
       "models": {
-        "linear": 1875.600675967597,
-        "polynomial": 1866.099713820542,
-        "random_forest": 1879.336700000001,
-        "boosted": 1879.8177781178297
+        "linear": 1866.8136608460848,
+        "polynomial": 1877.3630090139754,
+        "random_forest": 1874.5924410714294,
+        "boosted": 1883.7381589074073
       },
       "boosted_metrics": {
-        "rmse": 0.7582,
-        "directional_accuracy": 42.31,
+        "rmse": 4.0641,
+        "directional_accuracy": 40.38,
         "train_size": 487,
         "test_size": 105,
         "models": [
@@ -107,15 +107,15 @@
           "xgb"
         ],
         "feature_importance": {
-          "close": 624.0,
-          "volume": 161.0,
-          "RSI": 125.0,
-          "MACD": 198.0,
-          "bb_position": 100.0,
-          "obv": 253.0,
-          "stoch_rsi": 121.0,
-          "vwap_distance": 72.0,
-          "atr_14": 198.0,
+          "close": 567.0,
+          "volume": 99.0,
+          "RSI": 132.0,
+          "MACD": 140.0,
+          "bb_position": 59.0,
+          "obv": 212.0,
+          "stoch_rsi": 87.0,
+          "vwap_distance": 100.0,
+          "atr_14": 109.0,
           "gas_price": 0.0,
           "fear_greed": 0.0
         }
@@ -129,19 +129,19 @@
       "weight_source": "boosted_ensemble"
     },
     "120min": {
-      "timestamp": "2026-08-16T23:25:39.303671+00:00",
-      "price": 1877.814540384052,
-      "change_pct": -0.08808119395085186,
-      "confidence_band": 12.93,
+      "timestamp": "2026-08-17T00:26:26.220479+00:00",
+      "price": 1878.1337139600334,
+      "change_pct": 0.17193966430566612,
+      "confidence_band": 10.14,
       "models": {
-        "linear": 1871.8048271827186,
-        "polynomial": 1848.0485897518329,
-        "random_forest": 1879.336700000001,
-        "boosted": 1879.8177781178297
+        "linear": 1861.320379117912,
+        "polynomial": 1887.6980044508548,
+        "random_forest": 1874.5924410714294,
+        "boosted": 1883.7381589074073
       },
       "boosted_metrics": {
-        "rmse": 0.7582,
-        "directional_accuracy": 42.31,
+        "rmse": 4.0641,
+        "directional_accuracy": 40.38,
         "train_size": 487,
         "test_size": 105,
         "models": [
@@ -149,15 +149,15 @@
           "xgb"
         ],
         "feature_importance": {
-          "close": 624.0,
-          "volume": 161.0,
-          "RSI": 125.0,
-          "MACD": 198.0,
-          "bb_position": 100.0,
-          "obv": 253.0,
-          "stoch_rsi": 121.0,
-          "vwap_distance": 72.0,
-          "atr_14": 198.0,
+          "close": 567.0,
+          "volume": 99.0,
+          "RSI": 132.0,
+          "MACD": 140.0,
+          "bb_position": 59.0,
+          "obv": 212.0,
+          "stoch_rsi": 87.0,
+          "vwap_distance": 100.0,
+          "atr_14": 109.0,
           "gas_price": 0.0,
           "fear_greed": 0.0
         }
@@ -230,7 +230,7 @@
       "supply_change": null
     },
     "onchain_momentum": "NEUTRAL",
-    "fetched_at": "2026-08-16T21:25:39.303631Z"
+    "fetched_at": "2026-08-16T22:26:26.220443Z"
   },
   "model_scores": {
     "linear": 0.5,
@@ -249,9 +249,9 @@
     "macd": 0.0,
     "macd_signal": "NEUTRAL",
     "bb_position": "MIDDLE",
-    "current_price": 1879.47,
-    "sma_20": 1879.47,
-    "bb_upper": 1917.0594,
-    "bb_lower": 1841.8806
+    "current_price": 1874.91,
+    "sma_20": 1874.91,
+    "bb_upper": 1912.4082,
+    "bb_lower": 1837.4118
   }
 }
