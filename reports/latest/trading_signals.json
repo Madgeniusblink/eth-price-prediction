@@ -1,43 +1,42 @@
 {
   "trend_analysis": {
-    "trend": "BULLISH",
-    "confidence": "MEDIUM",
+    "trend": "BULL MARKET",
+    "confidence": "HIGH",
     "ma_alignment": "neutral",
     "price_action": "bullish",
     "momentum": "bullish",
-    "rsi": 59.83722776769513,
-    "macd_signal": "bearish"
+    "rsi": 52.968867016154746,
+    "macd_signal": "bullish"
   },
   "support_resistance": {
-    "current_price": 2008.68,
+    "current_price": 2497.16,
     "resistance": [
-      2014.6599999999999,
-      2051.9066666666668,
-      2089.38
+      2517.38,
+      2585.31,
+      2723.481666666667
     ],
     "support": [
-      1971.3449999999998,
-      1939.37,
-      1918.1666666666667
+      2471.35,
+      2405.35
     ],
-    "nearest_resistance": 2014.6599999999999,
-    "nearest_support": 1971.3449999999998
+    "nearest_resistance": 2517.38,
+    "nearest_support": 2471.35
   },
   "trading_signal": {
     "signal": "WAIT",
     "action": "WAIT - No clear entry signal",
     "confidence": "LOW",
     "scores": {
-      "buy": 3,
-      "sell": 4,
-      "short": 2
+      "buy": 5,
+      "sell": 2,
+      "short": 1
     },
-    "trend_context": "BULLISH",
-    "entry": 1971.34,
-    "stop_loss": 1912.2,
-    "target": 2014.66,
-    "risk_reward": 0.73,
-    "reasoning": "Market trend: BULLISH. RSI neutral at 59.8. MACD bearish crossover. Support at $1971.34 (1.9% below). Resistance at $2014.66 (0.3% above)\n\nYou are currently OUT OF TRADE. No clear entry opportunity. Wait for a better setup.",
+    "trend_context": "BULL MARKET",
+    "entry": 2497.16,
+    "stop_loss": 2471.35,
+    "target": 2517.38,
+    "risk_reward": 0.78,
+    "reasoning": "Market trend: BULL MARKET. RSI neutral at 53.0. MACD bullish crossover. Support at $2471.35 (1.0% below). Resistance at $2517.38 (0.8% above)\n\n\u26a0\ufe0f Original BUY signal filtered out due to poor Risk:Reward ratio (0.78 < 1.5 minimum)\n\nYou are currently OUT OF TRADE. No clear entry opportunity. Wait for a better setup.",
     "user_context": {
       "trade_status": "OUT_OF_TRADE",
       "position": {
@@ -50,8 +49,8 @@
       "notes": "Set trade_status to IN_TRADE when you enter a position, OUT_OF_TRADE when you exit"
     },
     "derivatives_data": {
-      "funding_rate": -5.6242564805e-05,
-      "open_interest": 15124126287.081047,
+      "funding_rate": -3.75969217211e-05,
+      "open_interest": 15194857859.499647,
       "long_short_ratio": null,
       "fear_greed_index": 61,
       "fear_greed_classification": "Greed"
@@ -59,20 +58,20 @@
   },
   "market_filters": {
     "trend": "down",
-    "trend_strength": 0.5114776600995452,
-    "ma_200": 2061.39795,
-    "near_sr": false,
+    "trend_strength": 0.7855671844670694,
+    "ma_200": 2599.25445,
+    "near_sr": true,
     "sr_levels": [
-      2959.8093,
-      3104.0581,
-      1950.0677,
-      3212.2447,
-      3320.4313
+      1875.7865000000002,
+      1925.1045000000001,
+      2492.2615000000005,
+      2689.5335000000005,
+      1777.1505000000002
     ]
   },
   "derivatives_context": {
-    "funding_rate": -5.6242564805e-05,
-    "open_interest": 15124169412.909048,
+    "funding_rate": -3.75969217211e-05,
+    "open_interest": 15194797032.379747,
     "long_short_ratio": null,
     "fear_greed_index": 61,
     "fear_greed_classification": "Greed"
@@ -80,12 +79,12 @@
   "defi_signals": {
     "uniswap_v3": {
       "optimal_range_1sigma": [
-        1952.32,
-        2065.04
+        2468.0,
+        2526.32
       ],
       "optimal_range_2sigma": [
-        1895.96,
-        2121.4
+        2438.84,
+        2555.48
       ],
       "projected_fee_apy": null,
       "il_at_10pct": 0.113,
@@ -168,15 +167,15 @@
       "supply_change": null
     },
     "onchain_momentum": "NEUTRAL",
-    "fetched_at": "2026-10-11T01:43:48.985274Z"
+    "fetched_at": "2026-10-11T08:33:13.866335Z"
   },
   "signal_score": {
     "score": 90,
     "signal": "BUY",
     "confidence": "HIGH",
-    "obv_trend": "DOWN",
-    "stoch_rsi": 0.627,
-    "vwap": 1974.34,
+    "obv_trend": "UP",
+    "stoch_rsi": 0.582,
+    "vwap": 2502.04,
     "rsi_divergence": "BULLISH"
   },
   "kelly": {
@@ -185,5 +184,5 @@
     "win_rate": 0.55,
     "win_loss_ratio": 1.5
   },
-  "generated_at": "2026-10-11T01:43:49.237575+00:00"
+  "generated_at": "2026-10-11T08:33:14.112140+00:00"
 }
