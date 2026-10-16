@@ -50,11 +50,11 @@
       "notes": "Set trade_status to IN_TRADE when you enter a position, OUT_OF_TRADE when you exit"
     },
     "derivatives_data": {
-      "funding_rate": 7.84555339025e-05,
-      "open_interest": 13991533439.61053,
+      "funding_rate": 6.0164093339e-06,
+      "open_interest": 14002899027.973242,
       "long_short_ratio": null,
-      "fear_greed_index": 53,
-      "fear_greed_classification": "Neutral"
+      "fear_greed_index": 63,
+      "fear_greed_classification": "Greed"
     }
   },
   "market_filters": {
@@ -71,11 +71,11 @@
     ]
   },
   "derivatives_context": {
-    "funding_rate": 7.84555339025e-05,
-    "open_interest": 13993654367.71863,
+    "funding_rate": 6.0164093339e-06,
+    "open_interest": 14002899027.973242,
     "long_short_ratio": null,
-    "fear_greed_index": 53,
-    "fear_greed_classification": "Neutral"
+    "fear_greed_index": 63,
+    "fear_greed_classification": "Greed"
   },
   "defi_signals": {
     "uniswap_v3": {
@@ -106,8 +106,8 @@
       "better_protocol": "UNISWAP_V3",
       "better_apy": 0
     },
-    "fear_greed_value": 53,
-    "fear_greed_label": "Neutral",
+    "fear_greed_value": 63,
+    "fear_greed_label": "Greed",
     "gas_gwei": null,
     "gas_label": "LOW",
     "onchain_momentum": "NEUTRAL"
@@ -130,9 +130,13 @@
       "hour_data": []
     },
     "fear_greed": {
-      "value": 53,
-      "label": "Neutral",
+      "value": 63,
+      "label": "Greed",
       "history": [
+        {
+          "value": 63,
+          "label": "Greed"
+        },
         {
           "value": 53,
           "label": "Neutral"
@@ -156,10 +160,6 @@
         {
           "value": 64,
           "label": "Greed"
-        },
-        {
-          "value": 59,
-          "label": "Greed"
         }
       ]
     },
@@ -168,7 +168,7 @@
       "supply_change": null
     },
     "onchain_momentum": "NEUTRAL",
-    "fetched_at": "2026-10-15T23:37:37.192413Z"
+    "fetched_at": "2026-10-16T03:54:54.027605Z"
   },
   "signal_score": {
     "score": 90,
@@ -185,5 +185,5 @@
     "win_rate": 0.55,
     "win_loss_ratio": 1.5
   },
-  "generated_at": "2026-10-15T23:37:37.422799+00:00"
+  "generated_at": "2026-10-16T03:54:54.260260+00:00"
 }
