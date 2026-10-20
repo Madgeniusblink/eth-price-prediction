@@ -1,43 +1,43 @@
 {
   "trend_analysis": {
-    "trend": "BULL MARKET",
-    "confidence": "HIGH",
-    "ma_alignment": "bearish",
+    "trend": "BULLISH",
+    "confidence": "MEDIUM",
+    "ma_alignment": "neutral",
     "price_action": "bullish",
     "momentum": "bullish",
-    "rsi": 51.560495938435274,
-    "macd_signal": "bullish"
+    "rsi": 59.83722776769513,
+    "macd_signal": "bearish"
   },
   "support_resistance": {
-    "current_price": 2408.46,
+    "current_price": 2008.68,
     "resistance": [
-      2436.2133333333336,
-      2464.54,
-      2490.84
+      2014.6599999999999,
+      2051.9066666666668,
+      2089.38
     ],
     "support": [
-      2396.2974999999997,
-      2354.01,
-      2320.3366666666666
+      1971.3449999999998,
+      1939.37,
+      1918.1666666666667
     ],
-    "nearest_resistance": 2436.2133333333336,
-    "nearest_support": 2396.2974999999997
+    "nearest_resistance": 2014.6599999999999,
+    "nearest_support": 1971.3449999999998
   },
   "trading_signal": {
     "signal": "WAIT",
-    "action": "ENTER LONG POSITION - Good entry opportunity",
-    "confidence": "FILTERED",
+    "action": "WAIT - No clear entry signal",
+    "confidence": "LOW",
     "scores": {
-      "buy": 7,
-      "sell": 0,
-      "short": 0
+      "buy": 3,
+      "sell": 4,
+      "short": 2
     },
-    "trend_context": "BULL MARKET",
-    "entry": 2408.46,
-    "stop_loss": 2396.3,
-    "target": 2436.21,
-    "risk_reward": 2.28,
-    "reasoning": "Market trend: BULL MARKET. RSI neutral at 51.6. MACD bullish crossover. Support at $2396.30 (0.5% below). Resistance at $2436.21 (1.2% above)\n\nYou are currently OUT OF TRADE. This is a good opportunity to enter a long position.",
+    "trend_context": "BULLISH",
+    "entry": 1971.34,
+    "stop_loss": 1912.2,
+    "target": 2014.66,
+    "risk_reward": 0.73,
+    "reasoning": "Market trend: BULLISH. RSI neutral at 59.8. MACD bearish crossover. Support at $1971.34 (1.9% below). Resistance at $2014.66 (0.3% above)\n\nYou are currently OUT OF TRADE. No clear entry opportunity. Wait for a better setup.",
     "user_context": {
       "trade_status": "OUT_OF_TRADE",
       "position": {
@@ -50,32 +50,29 @@
       "notes": "Set trade_status to IN_TRADE when you enter a position, OUT_OF_TRADE when you exit"
     },
     "derivatives_data": {
-      "funding_rate": 5.78061248805e-05,
-      "open_interest": 14317594489.853146,
+      "funding_rate": 1.54004238814e-05,
+      "open_interest": 14401070005.242441,
       "long_short_ratio": null,
       "fear_greed_index": 55,
       "fear_greed_classification": "Greed"
-    },
-    "filter_reasons": [
-      "Signal conflicts with down trend"
-    ]
+    }
   },
   "market_filters": {
     "trend": "down",
-    "trend_strength": 1.0,
-    "ma_200": 2591.02485,
+    "trend_strength": 0.5114776600995452,
+    "ma_200": 2061.39795,
     "near_sr": false,
     "sr_levels": [
-      1875.7865000000002,
-      1925.1045000000001,
-      2492.2615000000005,
-      2689.5335000000005,
-      1579.8785000000003
+      2959.8093,
+      3104.0581,
+      1950.0677,
+      3212.2447,
+      3320.4313
     ]
   },
   "derivatives_context": {
-    "funding_rate": 5.78061248805e-05,
-    "open_interest": 14317677143.411245,
+    "funding_rate": 1.54004238814e-05,
+    "open_interest": 14406689156.246042,
     "long_short_ratio": null,
     "fear_greed_index": 55,
     "fear_greed_classification": "Greed"
@@ -83,12 +80,12 @@
   "defi_signals": {
     "uniswap_v3": {
       "optimal_range_1sigma": [
-        2372.8,
-        2444.12
+        1952.32,
+        2065.04
       ],
       "optimal_range_2sigma": [
-        2337.14,
-        2479.78
+        1895.96,
+        2121.4
       ],
       "projected_fee_apy": null,
       "il_at_10pct": 0.113,
@@ -171,15 +168,15 @@
       "supply_change": null
     },
     "onchain_momentum": "NEUTRAL",
-    "fetched_at": "2026-10-20T04:12:56.737950Z"
+    "fetched_at": "2026-10-20T09:54:57.380192Z"
   },
   "signal_score": {
-    "score": 70,
+    "score": 90,
     "signal": "BUY",
-    "confidence": "MEDIUM",
-    "obv_trend": "UP",
-    "stoch_rsi": 0.98,
-    "vwap": 2409.52,
+    "confidence": "HIGH",
+    "obv_trend": "DOWN",
+    "stoch_rsi": 0.627,
+    "vwap": 1974.34,
     "rsi_divergence": "BULLISH"
   },
   "kelly": {
@@ -188,5 +185,5 @@
     "win_rate": 0.55,
     "win_loss_ratio": 1.5
   },
-  "generated_at": "2026-10-20T04:12:57.054425+00:00"
+  "generated_at": "2026-10-20T09:54:57.621126+00:00"
 }
