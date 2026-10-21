@@ -3,41 +3,41 @@
     "trend": "BULLISH",
     "confidence": "MEDIUM",
     "ma_alignment": "neutral",
-    "price_action": "bullish",
+    "price_action": "bearish",
     "momentum": "bullish",
-    "rsi": 59.83722776769513,
-    "macd_signal": "bearish"
+    "rsi": 59.17677363958345,
+    "macd_signal": "bullish"
   },
   "support_resistance": {
-    "current_price": 2008.68,
+    "current_price": 2441.71,
     "resistance": [
-      2014.6599999999999,
-      2051.9066666666668,
-      2089.38
+      2461.08,
+      2490.84,
+      2524.2725
     ],
     "support": [
-      1971.3449999999998,
-      1939.37,
-      1918.1666666666667
+      2406.0299999999997,
+      2374.3875000000003,
+      2320.3366666666666
     ],
-    "nearest_resistance": 2014.6599999999999,
-    "nearest_support": 1971.3449999999998
+    "nearest_resistance": 2461.08,
+    "nearest_support": 2406.0299999999997
   },
   "trading_signal": {
     "signal": "WAIT",
     "action": "WAIT - No clear entry signal",
     "confidence": "LOW",
     "scores": {
-      "buy": 3,
-      "sell": 4,
-      "short": 2
+      "buy": 5,
+      "sell": 2,
+      "short": 1
     },
     "trend_context": "BULLISH",
-    "entry": 1971.34,
-    "stop_loss": 1912.2,
-    "target": 2014.66,
-    "risk_reward": 0.73,
-    "reasoning": "Market trend: BULLISH. RSI neutral at 59.8. MACD bearish crossover. Support at $1971.34 (1.9% below). Resistance at $2014.66 (0.3% above)\n\nYou are currently OUT OF TRADE. No clear entry opportunity. Wait for a better setup.",
+    "entry": 2441.71,
+    "stop_loss": 2406.03,
+    "target": 2461.08,
+    "risk_reward": 0.54,
+    "reasoning": "Market trend: BULLISH. RSI neutral at 59.2. MACD bullish crossover. Price near upper Bollinger Band. Support at $2406.03 (1.5% below). Resistance at $2461.08 (0.8% above)\n\n\u26a0\ufe0f Original BUY signal filtered out due to poor Risk:Reward ratio (0.54 < 1.5 minimum)\n\nYou are currently OUT OF TRADE. No clear entry opportunity. Wait for a better setup.",
     "user_context": {
       "trade_status": "OUT_OF_TRADE",
       "position": {
@@ -50,42 +50,42 @@
       "notes": "Set trade_status to IN_TRADE when you enter a position, OUT_OF_TRADE when you exit"
     },
     "derivatives_data": {
-      "funding_rate": 9.49365767322e-05,
-      "open_interest": 14292464351.144146,
+      "funding_rate": 9.25886647601e-05,
+      "open_interest": 14650682264.734034,
       "long_short_ratio": null,
-      "fear_greed_index": 55,
+      "fear_greed_index": 63,
       "fear_greed_classification": "Greed"
     }
   },
   "market_filters": {
     "trend": "down",
-    "trend_strength": 0.5114776600995452,
-    "ma_200": 2061.39795,
+    "trend_strength": 1.0,
+    "ma_200": 2590.458,
     "near_sr": false,
     "sr_levels": [
-      2959.8093,
-      3104.0581,
-      1950.0677,
-      3212.2447,
-      3320.4313
+      1875.7865000000002,
+      1925.1045000000001,
+      2492.2615000000005,
+      2689.5335000000005,
+      1579.8785000000003
     ]
   },
   "derivatives_context": {
-    "funding_rate": 9.49365767322e-05,
-    "open_interest": 14292464351.144146,
+    "funding_rate": 9.25886647601e-05,
+    "open_interest": 14649183418.509035,
     "long_short_ratio": null,
-    "fear_greed_index": 55,
+    "fear_greed_index": 63,
     "fear_greed_classification": "Greed"
   },
   "defi_signals": {
     "uniswap_v3": {
       "optimal_range_1sigma": [
-        1952.32,
-        2065.04
+        2407.33,
+        2476.09
       ],
       "optimal_range_2sigma": [
-        1895.96,
-        2121.4
+        2372.94,
+        2510.48
       ],
       "projected_fee_apy": null,
       "il_at_10pct": 0.113,
@@ -106,7 +106,7 @@
       "better_protocol": "UNISWAP_V3",
       "better_apy": 0
     },
-    "fear_greed_value": 55,
+    "fear_greed_value": 63,
     "fear_greed_label": "Greed",
     "gas_gwei": null,
     "gas_label": "LOW",
@@ -130,9 +130,13 @@
       "hour_data": []
     },
     "fear_greed": {
-      "value": 55,
+      "value": 63,
       "label": "Greed",
       "history": [
+        {
+          "value": 63,
+          "label": "Greed"
+        },
         {
           "value": 55,
           "label": "Greed"
@@ -156,10 +160,6 @@
         {
           "value": 53,
           "label": "Neutral"
-        },
-        {
-          "value": 62,
-          "label": "Greed"
         }
       ]
     },
@@ -168,16 +168,16 @@
       "supply_change": null
     },
     "onchain_momentum": "NEUTRAL",
-    "fetched_at": "2026-10-20T23:04:58.651553Z"
+    "fetched_at": "2026-10-21T04:01:28.136706Z"
   },
   "signal_score": {
-    "score": 90,
+    "score": 100,
     "signal": "BUY",
     "confidence": "HIGH",
-    "obv_trend": "DOWN",
-    "stoch_rsi": 0.627,
-    "vwap": 1974.34,
-    "rsi_divergence": "BULLISH"
+    "obv_trend": "UP",
+    "stoch_rsi": 0.59,
+    "vwap": 2407.69,
+    "rsi_divergence": "NONE"
   },
   "kelly": {
     "kelly_fraction": 0.25,
@@ -185,5 +185,5 @@
     "win_rate": 0.55,
     "win_loss_ratio": 1.5
   },
-  "generated_at": "2026-10-20T23:04:58.848787+00:00"
+  "generated_at": "2026-10-21T04:01:28.371481+00:00"
 }
