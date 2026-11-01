@@ -1,7 +1,7 @@
 # Ethereum Price Prediction Report
 
-**Generated:** 2026-11-01 12:57:09 UTC  
-**Current Price:** $2260.23
+**Generated:** 2026-11-01 18:20:59 UTC  
+**Current Price:** $2261.25
 
 ---
 
@@ -9,15 +9,15 @@
 
 ### Trading Signal: WAIT
 
-**Action:** ENTER LONG POSITION - Good entry opportunity  
-**Confidence:** FILTERED  
-**Market Trend:** BULL MARKET
+**Action:** WAIT - No clear entry signal  
+**Confidence:** LOW  
+**Market Trend:** BULLISH
 
 ### Market Metrics
 
 | Metric | Value |
 |:-------|:------|
-| **Current Price** | $2260.23 |
+| **Current Price** | $2261.25 |
 | **Trend** | NEUTRAL |
 | **RSI (14)** | 50.00 (NEUTRAL) |
 | **MACD** | NEUTRAL |
@@ -29,10 +29,10 @@
 
 | Time Horizon | Predicted Price | Change | Target Time |
 |:-------------|:----------------|:-------|:------------|
-| **15min** | $2263.79 | +0.16% | 2026-11-01T13:12:13.035630+00:00 |
-| **30min** | $2263.37 | +0.14% | 2026-11-01T13:27:13.035630+00:00 |
-| **60min** | $2262.52 | +0.10% | 2026-11-01T13:57:13.035630+00:00 |
-| **120min** | $2260.82 | +0.03% | 2026-11-01T14:57:13.035630+00:00 |
+| **15min** | $2262.95 | +0.07% | 2026-11-01T18:36:02.315646+00:00 |
+| **30min** | $2262.73 | +0.07% | 2026-11-01T18:51:02.315646+00:00 |
+| **60min** | $2262.30 | +0.05% | 2026-11-01T19:21:02.315646+00:00 |
+| **120min** | $2261.45 | +0.01% | 2026-11-01T20:21:02.315646+00:00 |
 
 ---
 
@@ -40,33 +40,34 @@
 
 ### Market Trend Assessment
 
-**Overall Trend:** BULL MARKET (Confidence: HIGH)
+**Overall Trend:** BULLISH (Confidence: MEDIUM)
 
 **Trend Components:**
-- Moving Average Alignment: Bearish
+- Moving Average Alignment: Neutral
 - Price Action: Bullish
 - Momentum: Bullish
-- RSI: 66.60
-- MACD: Bullish
+- RSI: 59.84
+- MACD: Bearish
 
 ### Support and Resistance Levels
 
-**Current Price:** $2258.86
+**Current Price:** $2008.68
 
 **Resistance Levels:**
-- R1: $2370.31 (+4.93%)
-- R2: $2427.46 (+7.46%)
-- R3: $2482.92 (+9.92%)
+- R1: $2014.66 (+0.30%)
+- R2: $2051.91 (+2.15%)
+- R3: $2089.38 (+4.02%)
 
 **Support Levels:**
-- S1: $2204.49 (-2.41%)
-- S2: $2170.00 (-3.93%)
+- S1: $1971.34 (-1.86%)
+- S2: $1939.37 (-3.45%)
+- S3: $1918.17 (-4.51%)
 
 ### Trading Signal
 
 **Signal:** WAIT  
-**Action:** ENTER LONG POSITION - Good entry opportunity  
-**Confidence:** FILTERED
+**Action:** WAIT - No clear entry signal  
+**Confidence:** LOW
 
 **Analysis Reasoning:**
 
@@ -88,13 +89,9 @@
 - U
 - L
 - L
--  
-- M
-- A
-- R
-- K
-- E
-- T
+- I
+- S
+- H
 - .
 -  
 - R
@@ -112,10 +109,10 @@
 - a
 - t
 -  
-- 6
-- 6
+- 5
+- 9
 - .
-- 6
+- 8
 - .
 -  
 - M
@@ -124,9 +121,9 @@
 - D
 -  
 - b
-- u
-- l
-- l
+- e
+- a
+- r
 - i
 - s
 - h
@@ -154,18 +151,18 @@
 - t
 -  
 - $
-- 2
-- 2
-- 0
-- 4
-- .
-- 4
+- 1
 - 9
+- 7
+- 1
+- .
+- 3
+- 4
 -  
 - (
-- 2
+- 1
 - .
-- 4
+- 9
 - %
 -  
 - b
@@ -192,17 +189,17 @@
 -  
 - $
 - 2
-- 3
-- 7
+- 0
+- 1
+- 4
+- .
+- 6
+- 6
+-  
+- (
 - 0
 - .
 - 3
-- 1
--  
-- (
-- 4
-- .
-- 9
 - %
 -  
 - a
@@ -247,20 +244,20 @@
 - E
 - .
 -  
-- T
-- h
-- i
-- s
+- N
+- o
 -  
-- i
-- s
--  
+- c
+- l
+- e
 - a
+- r
 -  
-- g
-- o
-- o
-- d
+- e
+- n
+- t
+- r
+- y
 -  
 - o
 - p
@@ -273,38 +270,38 @@
 - i
 - t
 - y
+- .
 -  
+- W
+- a
+- i
 - t
+-  
+- f
 - o
--  
-- e
-- n
-- t
-- e
 - r
 -  
 - a
 -  
-- l
-- o
-- n
-- g
--  
-- p
-- o
-- s
-- i
+- b
+- e
 - t
-- i
-- o
-- n
+- t
+- e
+- r
+-  
+- s
+- e
+- t
+- u
+- p
 - .
 
 **Signal Strength Scores:**
 
-- Buy Score: 5
-- Sell Score: 0
-- Short Score: 0
+- Buy Score: 3
+- Sell Score: 4
+- Short Score: 2
 
 ---
 
